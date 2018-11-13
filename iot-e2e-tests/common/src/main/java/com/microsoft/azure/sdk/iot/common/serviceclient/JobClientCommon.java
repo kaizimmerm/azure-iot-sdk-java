@@ -210,10 +210,12 @@ public class JobClientCommon
                         deviceTwinDevice.setDesiredProperties(testDesProp);
                         twinExpectedTemperature.put(jobId, jobTemperature);
 
+                        System.out.println("Starting job id: " + jobId);
                         jobClient.scheduleUpdateTwin(
                                 jobId, queryCondition,
                                 deviceTwinDevice,
                                 new Date(), MAX_EXECUTION_TIME_IN_SECONDS);
+                        System.out.println("Started job id: " + jobId);
 
                         JobResult jobResult = jobClient.getJob(jobId);
                         while(jobResult.getJobStatus() != JobStatus.completed)
@@ -221,10 +223,13 @@ public class JobClientCommon
                             Thread.sleep(MAXIMUM_TIME_TO_WAIT_FOR_IOTHUB);
                             jobResult = jobClient.getJob(jobId);
                         }
+
+                        System.out.println("job id reported completed: " + jobId);
+
                         jobResult = queryJobResponseResult(jobId, JobType.scheduleUpdateTwin, JobStatus.completed);
                         jobResults.put(jobId, jobResult);
                     }
-                    catch (IotHubException | IOException | InterruptedException e)
+                    catch (Exception e)
                     {
                         jobExceptions.put(jobId, e);
                     }
@@ -237,7 +242,7 @@ public class JobClientCommon
 
         // Assert
         // asserts for the client side.
-        assertEquals(0, deviceTestManger.getStatusError());
+        assertEquals("status error was non-zero: " + deviceTestManger.getStatusError(),0, deviceTestManger.getStatusError());
         ConcurrentMap<String, ConcurrentLinkedQueue<Object>> changes = deviceTestManger.getTwinChanges();
         ConcurrentLinkedQueue<Object> receivedTemperatures = changes.get(STANDARD_PROPERTY_HOMETEMP);
         assertNotNull(receivedTemperatures);
@@ -314,7 +319,7 @@ public class JobClientCommon
                             jobExceptions.put(jobId, new Exception("Scheduled job did not finish with status 'completed' but with " + jobResult.getJobStatus()));
                         }
                     }
-                    catch (IotHubException | IOException |InterruptedException e)
+                    catch (Exception e)
                     {
                         jobExceptions.put(jobId, e);
                         System.out.println("Adding to job exceptions...");
@@ -383,10 +388,12 @@ public class JobClientCommon
                     {
                         if(index % 2 == 0)
                         {
+                            System.out.println("Starting job id: " + jobId);
                             jobClient.scheduleDeviceMethod(
                                     jobId, queryCondition,
                                     DeviceEmulator.METHOD_LOOPBACK, RESPONSE_TIMEOUT, CONNECTION_TIMEOUT, PAYLOAD_STRING,
                                     future, MAX_EXECUTION_TIME_IN_SECONDS);
+                            System.out.println("Started job id: " + jobId);
                         }
                         else
                         {
@@ -396,10 +403,12 @@ public class JobClientCommon
                             deviceTwinDevice.setDesiredProperties(testDesProp);
                             twinExpectedTemperature.put(jobId, jobTemperature);
 
+                            System.out.println("Starting job id: " + jobId);
                             jobClient.scheduleUpdateTwin(
                                     jobId, queryCondition,
                                     deviceTwinDevice,
                                     new Date(), MAX_EXECUTION_TIME_IN_SECONDS);
+                            System.out.println("Started job id: " + jobId);
                         }
                         JobResult jobResult = jobClient.getJob(jobId);
                         while(jobResult.getJobStatus() != JobStatus.completed)
@@ -411,8 +420,9 @@ public class JobClientCommon
                                 ((index % 2 == 0)?JobType.scheduleDeviceMethod:JobType.scheduleUpdateTwin),
                                 JobStatus.completed);
                         jobResults.put(jobId, jobResult);
+                        System.out.println("finished job id: " + jobId);
                     }
-                    catch (IotHubException | IOException |InterruptedException e)
+                    catch (Exception e)
                     {
                         jobExceptions.put(jobId, e);
                     }
@@ -430,7 +440,7 @@ public class JobClientCommon
         {
             if((timeout += MAXIMUM_TIME_TO_WAIT_FOR_IOTHUB) >= TEST_TIMEOUT_MS)
             {
-                assertTrue("Device didn't receive the twin change", false);
+                fail("Device didn't receive the twin change");
             }
             Thread.sleep(MAXIMUM_TIME_TO_WAIT_FOR_IOTHUB);
             changes = deviceTestManger.getTwinChanges();
@@ -521,7 +531,7 @@ public class JobClientCommon
                         }
                         System.out.println("Iothub confirmed " + jobId + " " + expectedJobStatus + " for " + JobType.scheduleDeviceMethod);
                     }
-                    catch (IotHubException | IOException |InterruptedException e)
+                    catch (Exception e)
                     {
                         jobExceptions.put(jobId, e);
                     }
