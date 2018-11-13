@@ -229,7 +229,7 @@ public class JobClientCommon
                         jobResult = queryJobResponseResult(jobId, JobType.scheduleUpdateTwin, JobStatus.completed);
                         jobResults.put(jobId, jobResult);
                     }
-                    catch (Exception e)
+                    catch (IotHubException | IOException | InterruptedException e)
                     {
                         jobExceptions.put(jobId, e);
                     }
@@ -319,7 +319,7 @@ public class JobClientCommon
                             jobExceptions.put(jobId, new Exception("Scheduled job did not finish with status 'completed' but with " + jobResult.getJobStatus()));
                         }
                     }
-                    catch (Exception e)
+                    catch (IotHubException | IOException | InterruptedException e)
                     {
                         jobExceptions.put(jobId, e);
                         System.out.println("Adding to job exceptions...");
@@ -422,7 +422,7 @@ public class JobClientCommon
                         jobResults.put(jobId, jobResult);
                         System.out.println("finished job id: " + jobId);
                     }
-                    catch (Exception e)
+                    catch (IotHubException | IOException | InterruptedException e)
                     {
                         jobExceptions.put(jobId, e);
                     }
@@ -531,7 +531,7 @@ public class JobClientCommon
                         }
                         System.out.println("Iothub confirmed " + jobId + " " + expectedJobStatus + " for " + JobType.scheduleDeviceMethod);
                     }
-                    catch (Exception e)
+                    catch (IotHubException | IOException | InterruptedException e)
                     {
                         jobExceptions.put(jobId, e);
                     }
