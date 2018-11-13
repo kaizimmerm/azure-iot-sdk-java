@@ -89,7 +89,7 @@ public class JobClientCommon
             }
         }
         
-        throw new AssertionError("queryDeviceJob did not find the job");
+        throw new AssertionError("queryDeviceJob did not find the job with id: " + jobId);
     }
 
     private JobResult queryJobResponseResult(String jobId, JobType jobType, JobStatus jobStatus) throws IOException, IotHubException
@@ -107,7 +107,7 @@ public class JobClientCommon
                 return jobResult;
             }
         }
-        throw new AssertionError("queryDeviceJob did not find the job");
+        throw new AssertionError("queryDeviceJob did not find the job with id: " + jobId);
     }
 
     public static void setUp() throws IOException, IotHubException, InterruptedException, URISyntaxException
