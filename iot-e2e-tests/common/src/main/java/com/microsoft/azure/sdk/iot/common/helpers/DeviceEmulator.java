@@ -5,16 +5,17 @@
 
 package com.microsoft.azure.sdk.iot.common.helpers;
 
-import com.microsoft.azure.sdk.iot.common.MessageAndResult;
-import com.microsoft.azure.sdk.iot.common.iothubservices.IotHubServicesCommon;
 import com.microsoft.azure.sdk.iot.device.*;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.Device;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodCallback;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodData;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -81,7 +82,7 @@ public class DeviceEmulator  implements Runnable
         }
     }
 
-    void start()
+    void start() throws InterruptedException
     {
         try
         {
@@ -94,11 +95,16 @@ public class DeviceEmulator  implements Runnable
         {
             e.printStackTrace();
         }
+
         clearStatistics();
+
+        List<IotHubConnectionStatus> actualStatusUpdates = new ArrayList<>();
+        setConnectionStatusCallBack(actualStatusUpdates);
 
         if (this.client != null)
         {
             IotHubServicesCommon.openClientWithRetry(this.client);
+            IotHubServicesCommon.confirmOpenStablized(actualStatusUpdates, 120000);
         }
     }
 
@@ -185,7 +191,7 @@ public class DeviceEmulator  implements Runnable
      *  properties reported in the callback, and getStatusOK and getStatusError
      *  will replace the status callback.
      *
-     * @throws IOException if failed to start the Device Twin.
+     * @throws IOException if failed to start the Device twin.
      */
     void enableDeviceTwin() throws IOException
     {
@@ -200,7 +206,7 @@ public class DeviceEmulator  implements Runnable
      * @param deviceTwin is the device twin including the properties callback. If {@code null}, use the local device with standard properties.
      * @param propertyCallBackContext context for the properties callback. Used only if deviceTwin is not {@code null}.
      * @param mustSubscribeToDesiredProperties is a boolean to define if it should or not subscribe to the desired properties.
-     * @throws IOException if failed to start the Device Twin.
+     * @throws IOException if failed to start the Device twin.
      */
     void enableDeviceTwin(IotHubEventCallback deviceTwinStatusCallBack, Object deviceTwinStatusCallbackContext,
                           Device deviceTwin, Object propertyCallBackContext, boolean mustSubscribeToDesiredProperties) throws IOException
@@ -374,4 +380,16 @@ public class DeviceEmulator  implements Runnable
         return METHOD_DELAY_IN_MILLISECONDS + ":succeed";
     }
 
+    private void setConnectionStatusCallBack(final List actualStatusUpdates)
+    {
+        IotHubConnectionStatusChangeCallback connectionStatusUpdateCallback = new IotHubConnectionStatusChangeCallback()
+        {
+            @Override
+            public void execute(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason statusChangeReason, Throwable throwable, Object callbackContext)
+            {
+                actualStatusUpdates.add(status);
+            }
+        };
+        this.client.registerConnectionStatusChangeCallback(connectionStatusUpdateCallback, null);
+    }
 }
