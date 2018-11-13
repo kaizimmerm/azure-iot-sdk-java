@@ -39,7 +39,7 @@ public class ReceiveMessagesITonAndroid extends ReceiveMessagesCommon
         x509Thumbprint = BuildConfig.IotHubThumbprint;
         privateKey = new String(Base64.decodeBase64Local(privateKeyBase64Encoded.getBytes()));
         publicKeyCert = new String(Base64.decodeBase64Local(publicKeyCertBase64Encoded.getBytes()));
-        includeModuleClientTest = false;
+        includeModuleClientTest = true;
 
         return ReceiveMessagesCommon.inputsCommon();
     }
@@ -47,96 +47,5 @@ public class ReceiveMessagesITonAndroid extends ReceiveMessagesCommon
     public ReceiveMessagesITonAndroid(InternalClient client, IotHubClientProtocol protocol, Device device, Module module, AuthenticationType authenticationType, String clientType)
     {
         super(client, protocol, device, module, authenticationType, clientType);
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void receiveMessagesWithTCPConnectionDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsConnectionDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsSessionDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsCBSReqLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsCBSRespLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsD2CLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsC2DLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsMethodReqLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsMethodRespLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsTwinReqLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithAmqpsTwinRespLinkDrop() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithGracefulShutdownAmqp() throws IOException, IotHubException, InterruptedException
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test 
-    public void receiveMessagesWithGracefulShutdownMqtt() throws IOException, IotHubException, InterruptedException
-    {
     }
 }

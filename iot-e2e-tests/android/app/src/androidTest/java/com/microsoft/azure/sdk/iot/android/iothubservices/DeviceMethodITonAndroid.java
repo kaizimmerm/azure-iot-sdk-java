@@ -48,7 +48,7 @@ public class DeviceMethodITonAndroid extends DeviceMethodCommon
         x509Thumbprint = BuildConfig.IotHubThumbprint;
         privateKey = new String(Base64.decodeBase64Local(privateKeyBase64Encoded.getBytes()));
         publicKeyCert = new String(Base64.decodeBase64Local(publicKeyCertBase64Encoded.getBytes()));
-        includeModuleClientTest = false;
+        includeModuleClientTest = true;
 
         return DeviceMethodCommon.inputsCommon();
     }
@@ -56,96 +56,5 @@ public class DeviceMethodITonAndroid extends DeviceMethodCommon
     public DeviceMethodITonAndroid(DeviceTestManager deviceTestManager, IotHubClientProtocol protocol, AuthenticationType authenticationType, String clientType, Device device, Module module)
     {
         super(deviceTestManager, protocol, authenticationType, clientType, device, module);
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromTcpConnectionDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsConnectionDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsSessionDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsCBSReqLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsCBSRespLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsD2CLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsC2DLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsMethodReqLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsMethodRespLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsTwinReqLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromAmqpsTwinRespLinkDrop() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromGracefulShutdownAmqp() throws Exception
-    {
-    }
-
-    @Ignore
-    @Override
-    @Test
-    public void invokeMethodRecoveredFromGracefulShutdownMqtt() throws Exception
-    {
     }
 }
