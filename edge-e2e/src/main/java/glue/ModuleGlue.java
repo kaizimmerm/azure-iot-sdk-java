@@ -429,6 +429,7 @@ public class ModuleGlue
         public synchronized IotHubMessageResult execute(Message msg, Object context)
         {
             System.out.println("MessageCallback called");
+            System.out.println("##############Removing message callback for input: " + this._inputName);
             this._client.setMessageCallback(this._inputName, null, null);
             String result = new String(msg.getBytes(), Message.DEFAULT_IOTHUB_MESSAGE_CHARSET);
             System.out.printf("result = %s%n", result);
@@ -461,6 +462,7 @@ public class ModuleGlue
         {
             MessageCallback callback = new MessageCallback(client, inputName, handler);
             System.out.printf("calling setMessageCallback%n");
+            System.out.println("##############Setting message callback for input: " + inputName);
             client.setMessageCallback(inputName, callback, null);
         }
     }
