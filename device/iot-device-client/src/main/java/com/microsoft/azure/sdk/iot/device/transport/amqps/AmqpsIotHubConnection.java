@@ -12,7 +12,6 @@ import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubListener;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportConnection;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportMessage;
-import com.sun.webkit.dom.EventImpl;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
