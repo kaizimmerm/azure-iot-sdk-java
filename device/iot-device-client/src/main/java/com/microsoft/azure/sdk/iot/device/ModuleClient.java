@@ -458,6 +458,9 @@ public class ModuleClient extends InternalClient
      */
     public ModuleClient setMessageCallback(String inputName, MessageCallback callback, Object context)
     {
+        System.out.println("##############Setting message callback with input name " + inputName);
+        System.out.println("##############message callback is null for inputname " + inputName);
+
         if (inputName == null || inputName.isEmpty())
         {
             //Codes_SRS_MODULECLIENT_34_011: [If the provided inputName is null or empty, this function shall throw an IllegalArgumentException.]
