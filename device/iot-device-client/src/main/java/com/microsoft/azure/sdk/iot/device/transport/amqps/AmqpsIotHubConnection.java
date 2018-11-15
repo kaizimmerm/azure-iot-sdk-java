@@ -12,11 +12,14 @@ import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubListener;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportConnection;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubTransportMessage;
+import com.sun.webkit.dom.EventImpl;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.*;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.*;
+import org.apache.qpid.proton.engine.impl.ReceiverImpl;
+import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.engine.impl.TransportInternal;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.reactor.FlowController;
@@ -1116,6 +1119,22 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
         String linkErrorDescription = event.getLink() != null && event.getLink().getRemoteCondition() != null && event.getLink().getRemoteCondition().getDescription() != null ? event.getLink().getRemoteCondition().getDescription() : "";
         String transportErrorDescription = event.getTransport() != null && event.getTransport().getRemoteCondition() != null && event.getTransport().getRemoteCondition().getDescription() != null ? event.getTransport().getRemoteCondition().getDescription() : "";
 
+        String contextError = event.getContext() instanceof TransportImpl && ((TransportImpl) event.getContext()).getCondition() != null && ((TransportImpl) event.getContext()).getCondition().getCondition() != null && ((TransportImpl) event.getContext()).getCondition().getCondition().toString() != null ? ((TransportImpl) event.getContext()).getCondition().getCondition().toString() : "";
+        String contextErrorDescription = event.getContext() instanceof TransportImpl && ((TransportImpl) event.getContext()).getCondition() != null && ((TransportImpl) event.getContext()).getCondition().getCondition() != null && ((TransportImpl) event.getContext()).getCondition().getDescription().toString() != null ? ((TransportImpl) event.getContext()).getCondition().getDescription().toString() : "";
+
+        String contextError2 = event.getContext() instanceof ReceiverImpl && ((ReceiverImpl) event.getContext()).getCondition() != null && ((ReceiverImpl) event.getContext()).getCondition().getCondition() != null && ((ReceiverImpl) event.getContext()).getCondition().getCondition().toString() != null ? ((ReceiverImpl) event.getContext()).getCondition().getCondition().toString() : "";
+        String contextErrorDescription2 = event.getContext() instanceof ReceiverImpl && ((ReceiverImpl) event.getContext()).getCondition() != null && ((ReceiverImpl) event.getContext()).getCondition().getCondition() != null && ((ReceiverImpl) event.getContext()).getCondition().getDescription().toString() != null ? ((ReceiverImpl) event.getContext()).getCondition().getDescription().toString() : "";
+
+        if (!contextError.isEmpty())
+        {
+            error = contextError;
+            errorDescription = contextErrorDescription;
+        }
+        else if (!contextError2.isEmpty())
+        {
+            error = contextError2;
+            errorDescription = contextErrorDescription2;
+        }
         if (!senderError.isEmpty())
         {
             // Codes_SRS_AMQPSIOTHUBCONNECTION_34_081: [If an exception can be found in the sender, this function shall return a the mapped amqp exception derived from that exception.]
