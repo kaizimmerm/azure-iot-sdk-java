@@ -516,6 +516,7 @@ public class MqttIotHubConnection implements IotHubTransportConnection, MqttMess
                     transportMessage.setMessageCallbackContext(this.config.getDeviceMethodsMessageContext());
                     break;
                 case DEVICE_TELEMETRY:
+                    System.out.println("##############Checking for callback on inputname " + transportMessage.getInputName());
                     //Codes_SRS_MQTTIOTHUBCONNECTION_34_062: [If a transport message is successfully received, and the message has a type of DEVICE_TELEMETRY, this function shall set the callback and callback context of this object from the saved values in config for telemetry.]
                     transportMessage.setMessageCallback(this.config.getDeviceTelemetryMessageCallback(transportMessage.getInputName()));
                     transportMessage.setMessageCallbackContext(this.config.getDeviceTelemetryMessageContext(transportMessage.getInputName()));

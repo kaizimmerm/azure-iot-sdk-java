@@ -153,8 +153,12 @@ public class IotHubTransport implements IotHubListener
     @Override
     public void onMessageReceived(IotHubTransportMessage message, Throwable e)
     {
+        System.out.println("##############IotHubTransport onMessageReceived");
+
         if (message != null && e != null)
         {
+            System.out.println("##############message was not null and e was not null!");
+
             //Codes_SRS_IOTHUBTRANSPORT_34_008: [If this function is called with a non-null message and a non-null
             // throwable, this function shall log an IllegalArgumentException.]
             this.logger.LogError("IllegalArgumentException encountered, method name is %s",
@@ -168,10 +172,15 @@ public class IotHubTransport implements IotHubListener
             // exception, this function shall add that message to the receivedMessagesQueue.]
             logger.LogInfo("Message with hashcode %s is received from IotHub on %s, method name is onMessageReceived",
                     message.hashCode(), new Date());
+
+            System.out.println("##############Adding message to receivedMessagesQueue");
             this.receivedMessagesQueue.add(message);
         }
         else if (e != null)
         {
+            System.out.println("##############Exception! ");
+            e.printStackTrace();
+
             //Codes_SRS_IOTHUBTRANSPORT_34_010: [If this function is called with a null message and a non-null
             // throwable, this function shall log that exception.]
             this.logger.LogError("Exception encountered while receiving messages from service, " +
@@ -535,6 +544,8 @@ public class IotHubTransport implements IotHubListener
      */
     private void acknowledgeReceivedMessage(IotHubTransportMessage receivedMessage) throws TransportException
     {
+        System.out.println("##############IotHubTransport acknowledgeReceivedMessage");
+
         MessageCallback messageCallback = receivedMessage.getMessageCallback();
         Object messageCallbackContext = receivedMessage.getMessageCallbackContext();
 
@@ -542,21 +553,30 @@ public class IotHubTransport implements IotHubListener
         {
             //Codes_SRS_IOTHUBTRANSPORT_34_053: [This function shall execute the callback associate with the provided
             // transport message with the provided message and its saved callback context.]
+            System.out.println("##############Executing callback!");
             IotHubMessageResult result = messageCallback.execute(receivedMessage, messageCallbackContext);
 
             try
             {
                 //Codes_SRS_IOTHUBTRANSPORT_34_054: [This function shall send the message callback result along the
                 // connection as the ack to the service.]
+                System.out.println("##############Sending message result");
                 this.iotHubTransportConnection.sendMessageResult(receivedMessage, result);
+                System.out.println("##############Sent message result");
             }
             catch (TransportException e)
             {
                 //Codes_SRS_IOTHUBTRANSPORT_34_055: [If an exception is thrown while acknowledging the received message,
                 // this function shall add the received message back into the receivedMessagesQueue and then rethrow the exception.]
+                System.out.println("##############Could not send message result, trying again...");
+                e.printStackTrace();
                 this.receivedMessagesQueue.add(receivedMessage);
                 throw e;
             }
+        }
+        else
+        {
+            System.out.println("##############Callback was null!");
         }
     }
 

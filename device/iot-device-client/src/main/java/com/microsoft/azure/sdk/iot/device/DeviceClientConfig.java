@@ -404,12 +404,14 @@ public final class DeviceClientConfig
         {
             // Codes_SRS_DEVICECLIENTCONFIG_34_010: [If the inputName is null, or the message callbacks map does not
             // contain the provided inputName, this function shall return the default message callback.]
+            System.out.println("##############Config returning default message callback because input was not present: " + inputName);
             return this.defaultDeviceTelemetryMessageCallback;
         }
         else
         {
             // Codes_SRS_DEVICECLIENTCONFIG_34_045: [If the message callbacks map contains the provided inputName, this function
             // shall return the callback associated with that inputName.]
+            System.out.println("##############Config returning input message callback because input was present: " + inputName);
             return this.inputChannelMessageCallbacks.get(inputName).getKey();
         }
     }
