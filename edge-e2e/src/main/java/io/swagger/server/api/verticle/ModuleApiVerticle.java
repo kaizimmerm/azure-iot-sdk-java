@@ -204,6 +204,7 @@ public class ModuleApiVerticle extends AbstractVerticle {
             try {
                 String connectionId = message.body().getString("connectionId");
                 String inputName = message.body().getString("inputName");
+                System.out.println("GET_MODULE_CONNECTIONID_INPUTMESSAGE_INPUTNAME_SERVICE_ID called with inputName " + inputName);
                 service.moduleConnectionIdInputMessageInputNameGet(connectionId, inputName, result -> {
                     if (result.succeeded())
                         message.reply(result.result());

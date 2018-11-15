@@ -67,6 +67,7 @@ public class ModuleApiImpl implements ModuleApi
     @Override
     public void moduleConnectionIdInputMessageInputNameGet(String connectionId, String inputName, Handler<AsyncResult<String>> handler)
     {
+        System.out.println("moduleConnectionIdInputMessageInputNameGet called with inputname " + inputName);
         this._moduleGlue.waitForInputMessage(connectionId, inputName, handler);
     }
 
