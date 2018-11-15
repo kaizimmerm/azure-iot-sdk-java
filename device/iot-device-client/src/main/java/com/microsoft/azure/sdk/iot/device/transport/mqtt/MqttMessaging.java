@@ -63,6 +63,7 @@ public class MqttMessaging extends Mqtt
         else if (this.moduleId != null && !this.moduleId.isEmpty())
         {
             //Codes_SRS_MqttMessaging_34_036: [start method shall subscribe to the inputs channel if communicating as a module to an edgehub.]
+            System.out.println("##############Subscribing to topic: " + this.inputsSubscribeTopic);
             this.subscribe(this.inputsSubscribeTopic);
         }
     }

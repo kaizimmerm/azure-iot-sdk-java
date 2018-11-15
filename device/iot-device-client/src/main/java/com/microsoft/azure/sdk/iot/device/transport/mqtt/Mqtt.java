@@ -389,11 +389,14 @@ abstract public class Mqtt implements MqttCallback
     @Override
     public void messageArrived(String topic, MqttMessage mqttMessage)
     {
+        System.out.println("##############Message arrived on topic: " + topic);
+
         //Codes_SRS_Mqtt_25_030: [The payload of the message and the topic is added to the received messages queue .]
         this.mqttConnection.getAllReceivedMessages().add(new MutablePair<>(topic, mqttMessage.getPayload()));
 
         if (this.messageListener != null)
         {
+            System.out.println("##############Notifying listener of topic " + topic);
             //Codes_SRS_Mqtt_34_045: [If there is a saved listener, this function shall notify that listener that a message arrived.]
             this.messageListener.onMessageArrived(mqttMessage.getId());
         }
@@ -463,6 +466,8 @@ abstract public class Mqtt implements MqttCallback
      */
     private IotHubTransportMessage constructMessage(byte[] data, String topic)
     {
+        System.out.println("##############Constructing message from topic " + topic);
+
         //Codes_SRS_Mqtt_25_024: [This method shall construct new Message with the bytes obtained from parsePayload and return the message.]
         IotHubTransportMessage message = new IotHubTransportMessage(data, MessageType.DEVICE_TELEMETRY);
 

@@ -332,6 +332,7 @@ public class MqttIotHubConnection implements IotHubTransportConnection, MqttMess
 
         if (message == null)
         {
+            System.out.println("##############Checking if message was deviceMessaging");
             message = deviceMessaging.receive();
         }
 
@@ -474,11 +475,14 @@ public class MqttIotHubConnection implements IotHubTransportConnection, MqttMess
     @Override
     public void onMessageArrived(int messageId)
     {
+        System.out.println("##############MqttIotHubConnection, onMessageArrived");
         IotHubTransportMessage transportMessage = null;
         try
         {
+            System.out.println("##############Receiving message...");
             //Codes_SRS_MQTTIOTHUBCONNECTION_34_058: [This function shall attempt to receive a message.]
             transportMessage = this.receiveMessage();
+            System.out.println("##############Message received successfully!");
         }
         catch (TransportException e)
         {
@@ -489,6 +493,7 @@ public class MqttIotHubConnection implements IotHubTransportConnection, MqttMess
 
         if (transportMessage == null)
         {
+            System.out.println("##############Message was null :(");
             //Ack is not sent to service for this message because we cannot interpret the message. Service will likely re-send
             this.listener.onMessageReceived(null, new TransportException("Message sent from service could not be parsed"));
             this.logger.LogInfo("Message arrived from IoT Hub that could not be parsed. That message has been ignored.");
@@ -520,6 +525,8 @@ public class MqttIotHubConnection implements IotHubTransportConnection, MqttMess
                 default:
                     //do nothing
             }
+
+            System.out.println("##############Calling transport listener with message");
 
             //Codes_SRS_MQTTIOTHUBCONNECTION_34_063: [If a transport message is successfully received, this function shall notify its listener that a message was received and provide the received message.]
             this.listener.onMessageReceived(transportMessage, null);
