@@ -139,6 +139,15 @@ public class ModuleApiVerticle extends AbstractVerticle {
                 System.out.println("%%%%%%%%% PUT_MODULE_CONNECTIONID_ENABLEINPUTMESSAGES_SERVICE_ID %%%%%%%%%");
 
                 String connectionId = message.body().getString("connectionId");
+
+                if (message.body().containsKey("inputName"))
+                {
+                    System.out.println("%%%%%%%%% PUT_MODULE_CONNECTIONID_ENABLEINPUTMESSAGES_SERVICE_ID contains inputName!!!!! %%%%%%%%%");
+                    String inputName = message.body().getString("inputName");
+                }
+
+
+
                 service.moduleConnectionIdEnableInputMessagesPut(connectionId, result -> {
                     if (result.succeeded())
                         message.reply(null);

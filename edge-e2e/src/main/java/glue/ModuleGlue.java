@@ -200,6 +200,10 @@ public class ModuleGlue
         }
         else
         {
+            //TODO shouldn't this do something other than return success?
+
+            //client.
+
             handler.handle(Future.succeededFuture());
         }
     }
