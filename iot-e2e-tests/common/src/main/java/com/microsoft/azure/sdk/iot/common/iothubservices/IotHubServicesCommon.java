@@ -42,7 +42,10 @@ public class IotHubServicesCommon
         try
         {
             openClientWithRetry(client);
-            confirmOpenStablized(statusUpdates, 120000);
+            if (statusUpdates != null)
+            {
+                confirmOpenStablized(statusUpdates, 120000);
+            }
 
             for (int i = 0; i < messagesToSend.size(); ++i) {
                 if (isErrorInjectionMessage(messagesToSend.get(i)))
@@ -422,20 +425,35 @@ public class IotHubServicesCommon
         long startTime = System.currentTimeMillis();
         long timeElapsed;
 
-        int numOfUpdates = 0;
-        if (actualStatusUpdates != null)
+        while (actualStatusUpdates.size() == 0)
         {
-            while (numOfUpdates == 0 || numOfUpdates != actualStatusUpdates.size() || actualStatusUpdates.get(actualStatusUpdates.size() - 1) != IotHubConnectionStatus.CONNECTED)
-            {
-                numOfUpdates = actualStatusUpdates.size();
-                Thread.sleep(6 * 1000);
-                timeElapsed = System.currentTimeMillis() - startTime;
+            System.out.println("waiting for connection callback");
+            Thread.sleep(200);
+            timeElapsed = System.currentTimeMillis() - startTime;
 
-                if (timeElapsed > timeout)
-                {
-                    fail("Timed out waiting for a stable connection on first open");
-                }
+            // 2 minutes timeout waiting for first connection to occur
+            if (timeElapsed > 20000)
+            {
+                fail("Timed out waiting for a first connection success");
             }
+        }
+
+        int numOfUpdates = 0;
+        while (numOfUpdates == 0 || numOfUpdates != actualStatusUpdates.size() || actualStatusUpdates.get(actualStatusUpdates.size() - 1) != IotHubConnectionStatus.CONNECTED)
+        {
+            numOfUpdates = actualStatusUpdates.size();
+            Thread.sleep(6 * 1000);
+            timeElapsed = System.currentTimeMillis() - startTime;
+
+            if (timeElapsed > timeout)
+            {
+                fail("Timed out waiting for a stable connection on first open");
+            }
+        }
+
+        for (int i=0; i<actualStatusUpdates.size(); i++)
+        {
+            System.out.println("actualStatusUpdate"+ i +" =" + actualStatusUpdates.get(i));
         }
     }
 }

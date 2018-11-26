@@ -11,10 +11,13 @@ import com.microsoft.azure.sdk.iot.device.*;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.Device;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodCallback;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodData;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -46,6 +49,7 @@ public class DeviceEmulator  implements Runnable
     private Object deviceMethodCallbackContext;
     private IotHubEventCallback deviceMethodStatusCallback;
     private Object deviceMethodStatusCallbackContext;
+    private List<IotHubConnectionStatus> actualStatusUpdates;
 
     private final static String THREAD_NAME = "azure-iot-sdk-DeviceEmulator";
 
@@ -61,6 +65,20 @@ public class DeviceEmulator  implements Runnable
     DeviceEmulator(InternalClient client) throws URISyntaxException, IOException, InterruptedException
     {
         this.client = client;
+    }
+
+    private void setConnectionStatusCallBack(final List actualStatusUpdates)
+    {
+
+        IotHubConnectionStatusChangeCallback connectionStatusUpdateCallback = new IotHubConnectionStatusChangeCallback()
+        {
+            @Override
+            public void execute(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason statusChangeReason, Throwable throwable, Object callbackContext) {
+                actualStatusUpdates.add(status);
+            }
+        };
+
+        this.client.registerConnectionStatusChangeCallback(connectionStatusUpdateCallback, null);
     }
 
     @Override
@@ -81,7 +99,7 @@ public class DeviceEmulator  implements Runnable
         }
     }
 
-    void start()
+    void start() throws InterruptedException
     {
         try
         {
@@ -96,9 +114,13 @@ public class DeviceEmulator  implements Runnable
         }
         clearStatistics();
 
+        actualStatusUpdates = new ArrayList<>();
+        setConnectionStatusCallBack(actualStatusUpdates);
+
         if (this.client != null)
         {
             IotHubServicesCommon.openClientWithRetry(this.client);
+            IotHubServicesCommon.confirmOpenStablized(actualStatusUpdates, 120000);
         }
     }
 
