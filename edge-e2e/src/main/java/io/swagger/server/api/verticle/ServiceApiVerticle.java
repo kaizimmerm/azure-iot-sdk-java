@@ -40,6 +40,8 @@ public class ServiceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_service_connect
         vertx.eventBus().<JsonObject> consumer(PUT_SERVICE_CONNECT_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_SERVICE_CONNECT_SERVICE_ID %%%%%%%%%");
+
                 String connectionString = message.body().getString("connectionString");
                 service.serviceConnectPut(connectionString, result -> {
                     if (result.succeeded())
@@ -58,6 +60,8 @@ public class ServiceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_service_connectionId_deviceMethod_deviceId
         vertx.eventBus().<JsonObject> consumer(PUT_SERVICE_CONNECTIONID_DEVICEMETHOD_DEVICEID_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_SERVICE_CONNECTIONID_DEVICEMETHOD_DEVICEID_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String deviceId = message.body().getString("deviceId");
                 Object methodInvokeParameters = message.body().getJsonObject("methodInvokeParameters");
@@ -78,6 +82,8 @@ public class ServiceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_service_connectionId_disconnect_
         vertx.eventBus().<JsonObject> consumer(PUT_SERVICE_CONNECTIONID_DISCONNECT__SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_SERVICE_CONNECTIONID_DISCONNECT__SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.serviceConnectionIdDisconnectPut(connectionId, result -> {
                     if (result.succeeded())
@@ -96,6 +102,8 @@ public class ServiceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_service_connectionId_moduleMethod_deviceId_moduleId
         vertx.eventBus().<JsonObject> consumer(PUT_SERVICE_CONNECTIONID_MODULEMETHOD_DEVICEID_MODULEID_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_SERVICE_CONNECTIONID_MODULEMETHOD_DEVICEID_MODULEID_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String deviceId = message.body().getString("deviceId");
                 String moduleId = message.body().getString("moduleId");

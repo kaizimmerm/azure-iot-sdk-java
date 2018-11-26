@@ -42,6 +42,8 @@ public class DeviceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_device_connect_transportType
         vertx.eventBus().<JsonObject> consumer(PUT_DEVICE_CONNECT_TRANSPORTTYPE_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_DEVICE_CONNECT_TRANSPORTTYPE_SERVICE_ID %%%%%%%%%");
+
                 String transportType = message.body().getString("transportType");
                 String connectionString = message.body().getString("connectionString");
                 Certificate caCertificate = Json.mapper.readValue(message.body().getJsonObject("caCertificate").encode(), Certificate.class);
@@ -62,6 +64,8 @@ public class DeviceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_device_connectionId_disconnect
         vertx.eventBus().<JsonObject> consumer(PUT_DEVICE_CONNECTIONID_DISCONNECT_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_DEVICE_CONNECTIONID_DISCONNECT_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.deviceConnectionIdDisconnectPut(connectionId, result -> {
                     if (result.succeeded())
@@ -80,6 +84,8 @@ public class DeviceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_device_connectionId_enableMethods
         vertx.eventBus().<JsonObject> consumer(PUT_DEVICE_CONNECTIONID_ENABLEMETHODS_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_DEVICE_CONNECTIONID_ENABLEMETHODS_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.deviceConnectionIdEnableMethodsPut(connectionId, result -> {
                     if (result.succeeded())
@@ -98,6 +104,8 @@ public class DeviceApiVerticle extends AbstractVerticle {
         //Consumer for PUT_device_connectionId_roundtripMethodCall_methodName
         vertx.eventBus().<JsonObject> consumer(PUT_DEVICE_CONNECTIONID_ROUNDTRIPMETHODCALL_METHODNAME_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_DEVICE_CONNECTIONID_ROUNDTRIPMETHODCALL_METHODNAME_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String methodName = message.body().getString("methodName");
                 RoundtripMethodCallBody requestAndResponse = Json.mapper.readValue(message.body().getJsonObject("requestAndResponse").encode(), RoundtripMethodCallBody.class);

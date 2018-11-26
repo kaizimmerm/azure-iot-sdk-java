@@ -40,6 +40,8 @@ public class EventhubApiVerticle extends AbstractVerticle {
         //Consumer for PUT_eventhub_connect
         vertx.eventBus().<JsonObject> consumer(PUT_EVENTHUB_CONNECT_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_EVENTHUB_CONNECT_SERVICE_ID %%%%%%%%%");
+
                 String connectionString = message.body().getString("connectionString");
                 service.eventhubConnectPut(connectionString, result -> {
                     if (result.succeeded())
@@ -58,6 +60,8 @@ public class EventhubApiVerticle extends AbstractVerticle {
         //Consumer for GET_eventhub_connectionId_deviceTelemetry_deviceId
         vertx.eventBus().<JsonObject> consumer(GET_EVENTHUB_CONNECTIONID_DEVICETELEMETRY_DEVICEID_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% GET_EVENTHUB_CONNECTIONID_DEVICETELEMETRY_DEVICEID_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String deviceId = message.body().getString("deviceId");
                 service.eventhubConnectionIdDeviceTelemetryDeviceIdGet(connectionId, deviceId, result -> {
@@ -77,6 +81,8 @@ public class EventhubApiVerticle extends AbstractVerticle {
         //Consumer for PUT_eventhub_connectionId_disconnect_
         vertx.eventBus().<JsonObject> consumer(PUT_EVENTHUB_CONNECTIONID_DISCONNECT__SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_EVENTHUB_CONNECTIONID_DISCONNECT__SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.eventhubConnectionIdDisconnectPut(connectionId, result -> {
                     if (result.succeeded())
@@ -95,6 +101,8 @@ public class EventhubApiVerticle extends AbstractVerticle {
         //Consumer for PUT_eventhub_connectionId_enableTelemetry
         vertx.eventBus().<JsonObject> consumer(PUT_EVENTHUB_CONNECTIONID_ENABLETELEMETRY_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_EVENTHUB_CONNECTIONID_ENABLETELEMETRY_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.eventhubConnectionIdEnableTelemetryPut(connectionId, result -> {
                     if (result.succeeded())

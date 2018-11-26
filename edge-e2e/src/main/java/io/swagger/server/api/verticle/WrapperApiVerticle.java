@@ -39,6 +39,8 @@ public class WrapperApiVerticle extends AbstractVerticle {
         //Consumer for PUT_wrapper_cleanup
         vertx.eventBus().<JsonObject> consumer(PUT_WRAPPER_CLEANUP_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_WRAPPER_CLEANUP_SERVICE_ID %%%%%%%%%");
+
                 service.wrapperCleanupPut(result -> {
                     if (result.succeeded())
                         message.reply(null);
@@ -56,6 +58,8 @@ public class WrapperApiVerticle extends AbstractVerticle {
         //Consumer for PUT_wrapper_message
         vertx.eventBus().<JsonObject> consumer(PUT_WRAPPER_MESSAGE_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_WRAPPER_MESSAGE_SERVICE_ID %%%%%%%%%");
+
                 Object msg = message.body().getJsonObject("msg");
                 service.wrapperMessagePut(msg, result -> {
                     if (result.succeeded())
@@ -74,6 +78,8 @@ public class WrapperApiVerticle extends AbstractVerticle {
         //Consumer for GET_wrapper_session
         vertx.eventBus().<JsonObject> consumer(GET_WRAPPER_SESSION_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% GET_WRAPPER_SESSION_SERVICE_ID %%%%%%%%%");
+
                 service.wrapperSessionGet(result -> {
                     if (result.succeeded())
                         message.reply(null);
@@ -91,6 +97,8 @@ public class WrapperApiVerticle extends AbstractVerticle {
         //Consumer for PUT_wrapper_session
         vertx.eventBus().<JsonObject> consumer(PUT_WRAPPER_SESSION_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_WRAPPER_SESSION_SERVICE_ID %%%%%%%%%");
+
                 service.wrapperSessionPut(result -> {
                     if (result.succeeded())
                         message.reply(null);

@@ -40,6 +40,8 @@ public class RegistryApiVerticle extends AbstractVerticle {
         //Consumer for PUT_registry_connect
         vertx.eventBus().<JsonObject> consumer(PUT_REGISTRY_CONNECT_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_REGISTRY_CONNECT_SERVICE_ID %%%%%%%%%");
+
                 String connectionString = message.body().getString("connectionString");
                 service.registryConnectPut(connectionString, result -> {
                     if (result.succeeded())
@@ -58,6 +60,8 @@ public class RegistryApiVerticle extends AbstractVerticle {
         //Consumer for PUT_registry_connectionId_disconnect_
         vertx.eventBus().<JsonObject> consumer(PUT_REGISTRY_CONNECTIONID_DISCONNECT__SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PUT_REGISTRY_CONNECTIONID_DISCONNECT__SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 service.registryConnectionIdDisconnectPut(connectionId, result -> {
                     if (result.succeeded())
@@ -76,6 +80,8 @@ public class RegistryApiVerticle extends AbstractVerticle {
         //Consumer for GET_registry_connectionId_moduleTwin_deviceId_moduleId
         vertx.eventBus().<JsonObject> consumer(GET_REGISTRY_CONNECTIONID_MODULETWIN_DEVICEID_MODULEID_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% GET_REGISTRY_CONNECTIONID_MODULETWIN_DEVICEID_MODULEID_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String deviceId = message.body().getString("deviceId");
                 String moduleId = message.body().getString("moduleId");
@@ -96,6 +102,8 @@ public class RegistryApiVerticle extends AbstractVerticle {
         //Consumer for PATCH_registry_connectionId_moduleTwin_deviceId_moduleId
         vertx.eventBus().<JsonObject> consumer(PATCH_REGISTRY_CONNECTIONID_MODULETWIN_DEVICEID_MODULEID_SERVICE_ID).handler(message -> {
             try {
+                System.out.println("%%%%%%%%% PATCH_REGISTRY_CONNECTIONID_MODULETWIN_DEVICEID_MODULEID_SERVICE_ID %%%%%%%%%");
+
                 String connectionId = message.body().getString("connectionId");
                 String deviceId = message.body().getString("deviceId");
                 String moduleId = message.body().getString("moduleId");
