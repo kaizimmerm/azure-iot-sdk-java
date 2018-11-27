@@ -29,7 +29,7 @@ public final class AmqpsDeviceTelemetry extends AmqpsDeviceOperations
     private static final String RECEIVER_LINK_ENDPOINT_PATH_DEVICES = "/devices/%s/messages/devicebound";
 
     private static final String SENDER_LINK_ENDPOINT_PATH_MODULES = "/devices/%s/modules/%s/messages/events";
-    private static final String RECEIVER_LINK_ENDPOINT_PATH_MODULES = "/devices/%s/modules/%s/messages/events";
+    private static final String RECEIVER_LINK_ENDPOINT_PATH_MODULES = "/devices/%s/modules/%s/messages/devicebound";
 
     private static final String SENDER_LINK_TAG_PREFIX = "sender_link_telemetry-";
     private static final String RECEIVER_LINK_TAG_PREFIX = "receiver_link_telemetry-";
