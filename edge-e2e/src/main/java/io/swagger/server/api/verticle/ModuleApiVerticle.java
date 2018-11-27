@@ -383,10 +383,9 @@ public class ModuleApiVerticle extends AbstractVerticle {
         });
         System.out.println("&&&&&&&&& stood up receiver for PATCH_MODULE_CONNECTIONID_TWIN_SERVICE_ID &&&&&&&&&");
 
-        vertx.eventBus().addInterceptor(new Handler<SendContext>()
+        vertx.eventBus().addInterceptor(event ->
         {
-            @Override
-            public void handle(SendContext event)
+            if (event != null)
             {
                 System.out.println("######### message:" + event.message() != null ? event.message() : "null" + " #########");
                 System.out.println("######### address:" + event.message() != null && event.message().address() != null ? event.message().address() : "null" + " #########");
