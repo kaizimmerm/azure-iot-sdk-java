@@ -1,7 +1,9 @@
 package io.swagger.server.api.verticle;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.SendContext;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -380,6 +382,16 @@ public class ModuleApiVerticle extends AbstractVerticle {
             }
         });
         System.out.println("&&&&&&&&& stood up receiver for PATCH_MODULE_CONNECTIONID_TWIN_SERVICE_ID &&&&&&&&&");
+
+        vertx.eventBus().addInterceptor(new Handler<SendContext>()
+        {
+            @Override
+            public void handle(SendContext event)
+            {
+                System.out.println("######### message:" + event.message() != null ? event.message() : "null" + " #########");
+                System.out.println("######### address:" + event.message() != null && event.message().address() != null ? event.message().address() : "null" + " #########");
+            }
+        });
 
     }
 
