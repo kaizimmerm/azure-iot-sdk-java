@@ -382,16 +382,6 @@ public class ModuleApiVerticle extends AbstractVerticle {
             }
         });
         System.out.println("&&&&&&&&& stood up receiver for PATCH_MODULE_CONNECTIONID_TWIN_SERVICE_ID &&&&&&&&&");
-
-        //vertx.eventBus().addInterceptor(event ->
-        //{
-            //if (event != null)
-            //{
-                //System.out.println("######### message:" + event.message() != null ? event.message() : "null" + " #########");
-                //System.out.println("######### address:" + event.message() != null && event.message().address() != null ? event.message().address() : "null" + " #########");
-            //}
-        //});
-
     }
 
     private void manageError(Message<JsonObject> message, Throwable cause, String serviceName) {
