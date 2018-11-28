@@ -492,7 +492,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
         catch (TransportException e)
         {
             this.savedException = e;
-            logger.LogDebug("openLinks has thrown exception: %s", e.getMessage());
+            logger.LogError(e);
         }
 
         logger.LogDebug("Exited from method %s", logger.getMethodName());
@@ -527,6 +527,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
             catch (TransportException e)
             {
                 this.savedException = e;
+                logger.LogError(this.savedException);
             }
         }
 
@@ -669,10 +670,9 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
         }
         catch (TransportException e)
         {
-            logger.LogDebug("Exception in onLinkInit: %s", e.getMessage());
-
             // Codes_SRS_AMQPSIOTHUBCONNECTION_34_067: [If an exception is thrown while executing the callback onLinkInit on the saved amqpsSessionManager, that exception shall be saved.]
             this.savedException = e;
+            logger.LogError(this.savedException);
         }
 
         logger.LogDebug("Exited from method %s", logger.getMethodName());
@@ -889,6 +889,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
 
                                 //Codes_SRS_AMQPSIOTHUBCONNECTION_34_089: [If an amqp message can be received from the receiver link, and that amqp message contains a status code that is not 200 or 204, this function shall notify this object's listeners that that message was received and provide the status code's mapped exception.]
                                 this.savedException = IotHubStatusCode.getConnectionStatusException(iotHubStatusCode, statusDescription);
+                                logger.LogError(this.savedException);
                             }
                         }
                         catch (NumberFormatException nfe)
