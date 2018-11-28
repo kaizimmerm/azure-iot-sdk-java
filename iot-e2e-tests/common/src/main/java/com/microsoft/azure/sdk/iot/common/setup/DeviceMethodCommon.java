@@ -227,6 +227,9 @@ public class DeviceMethodCommon extends MethodNameLoggingIntegrationTest
     @Before
     public void cleanToStart()
     {
+        actualStatusUpdates = new ArrayList<>();
+        setConnectionStatusCallBack(actualStatusUpdates);
+
         try
         {
             this.testInstance.deviceTestManager.stop();
@@ -245,6 +248,7 @@ public class DeviceMethodCommon extends MethodNameLoggingIntegrationTest
         try
         {
             this.testInstance.deviceTestManager.start();
+            IotHubServicesCommon.confirmOpenStablized(actualStatusUpdates, 120000);
         }
         catch (IOException | InterruptedException e)
         {

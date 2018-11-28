@@ -46,8 +46,6 @@ public class IotHubServicesCommon
                 confirmOpenStablized(statusUpdates, 120000);
             }
 
-            confirmOpenStablized(statusUpdates, 120000);
-
             for (int i = 0; i < messagesToSend.size(); ++i)
             {
                 if (isErrorInjectionMessage(messagesToSend.get(i)))
@@ -428,7 +426,7 @@ public class IotHubServicesCommon
         while (numOfUpdates != actualStatusUpdates.size() || actualStatusUpdates.get(actualStatusUpdates.size()-1) != IotHubConnectionStatus.CONNECTED)
         {
             numOfUpdates = actualStatusUpdates.size();
-            Thread.sleep(6 * 1000);
+            Thread.sleep(2 * 1000);
             timeElapsed = System.currentTimeMillis() - startTime;
 
             // 2 minutes timeout waiting for connection to stabilized
@@ -448,6 +446,7 @@ public class IotHubServicesCommon
     {
         long startTime = System.currentTimeMillis();
         long timeElapsed;
+
         int numOfUpdates = 0;
         if (actualStatusUpdates != null)
         {
@@ -456,6 +455,7 @@ public class IotHubServicesCommon
                 numOfUpdates = actualStatusUpdates.size();
                 Thread.sleep(6 * 1000);
                 timeElapsed = System.currentTimeMillis() - startTime;
+
                 if (timeElapsed > timeout)
                 {
                     fail("Timed out waiting for a stable connection on first open");

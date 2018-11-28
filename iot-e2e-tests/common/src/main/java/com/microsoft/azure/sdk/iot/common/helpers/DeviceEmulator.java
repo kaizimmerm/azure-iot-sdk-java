@@ -98,13 +98,9 @@ public class DeviceEmulator  implements Runnable
 
         clearStatistics();
 
-        List<IotHubConnectionStatus> actualStatusUpdates = new ArrayList<>();
-        setConnectionStatusCallBack(actualStatusUpdates);
-
         if (this.client != null)
         {
             IotHubServicesCommon.openClientWithRetry(this.client);
-            IotHubServicesCommon.confirmOpenStablized(actualStatusUpdates, 120000);
         }
     }
 
@@ -378,18 +374,5 @@ public class DeviceEmulator  implements Runnable
         long delay = Long.parseLong(payload);
         Thread.sleep(delay);
         return METHOD_DELAY_IN_MILLISECONDS + ":succeed";
-    }
-
-    private void setConnectionStatusCallBack(final List actualStatusUpdates)
-    {
-        IotHubConnectionStatusChangeCallback connectionStatusUpdateCallback = new IotHubConnectionStatusChangeCallback()
-        {
-            @Override
-            public void execute(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason statusChangeReason, Throwable throwable, Object callbackContext)
-            {
-                actualStatusUpdates.add(status);
-            }
-        };
-        this.client.registerConnectionStatusChangeCallback(connectionStatusUpdateCallback, null);
     }
 }
