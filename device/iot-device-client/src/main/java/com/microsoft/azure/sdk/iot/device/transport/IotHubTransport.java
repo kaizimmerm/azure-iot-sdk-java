@@ -7,8 +7,34 @@
 
 package com.microsoft.azure.sdk.iot.device.transport;
 
-import com.microsoft.azure.sdk.iot.device.*;
-import com.microsoft.azure.sdk.iot.device.exceptions.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import com.microsoft.azure.sdk.iot.device.DeviceClientConfig;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionState;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStateCallback;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStatusChangeCallback;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStatusChangeReason;
+import com.microsoft.azure.sdk.iot.device.IotHubEventCallback;
+import com.microsoft.azure.sdk.iot.device.IotHubMessageResult;
+import com.microsoft.azure.sdk.iot.device.IotHubStatusCode;
+import com.microsoft.azure.sdk.iot.device.Message;
+import com.microsoft.azure.sdk.iot.device.MessageCallback;
+import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
+import com.microsoft.azure.sdk.iot.device.exceptions.DeviceOperationTimeoutException;
+import com.microsoft.azure.sdk.iot.device.exceptions.IotHubServiceException;
+import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import com.microsoft.azure.sdk.iot.device.exceptions.UnauthorizedException;
 import com.microsoft.azure.sdk.iot.device.transport.amqps.AmqpsIotHubConnection;
 import com.microsoft.azure.sdk.iot.device.transport.amqps.exceptions.AmqpConnectionThrottledException;
 import com.microsoft.azure.sdk.iot.device.transport.amqps.exceptions.AmqpUnauthorizedAccessException;
@@ -16,12 +42,6 @@ import com.microsoft.azure.sdk.iot.device.transport.https.HttpsIotHubConnection;
 import com.microsoft.azure.sdk.iot.device.transport.mqtt.MqttIotHubConnection;
 import com.microsoft.azure.sdk.iot.device.transport.mqtt.exceptions.MqttUnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.*;
-import java.util.concurrent.*;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Manages queueing of message sending, receiving and callbacks. Manages notifying users of connection status change updates
@@ -73,7 +93,7 @@ public class IotHubTransport implements IotHubListener
      * @param defaultConfig the config used for opening connections, retrieving retry policy, and checking protocol
      * @throws IllegalArgumentException if defaultConfig is null
      */
-    public IotHubTransport(DeviceClientConfig defaultConfig) throws IllegalArgumentException
+    public IotHubTransport(final DeviceClientConfig defaultConfig) throws IllegalArgumentException
     {
         if (defaultConfig == null)
         {
@@ -92,7 +112,7 @@ public class IotHubTransport implements IotHubListener
     }
 
     @Override
-    public void onMessageSent(Message message, Throwable e)
+    public void onMessageSent(final Message message, final Throwable e)
     {
         if (message == null)
         {
@@ -148,7 +168,7 @@ public class IotHubTransport implements IotHubListener
     }
 
     @Override
-    public void onMessageReceived(IotHubTransportMessage message, Throwable e)
+    public void onMessageReceived(final IotHubTransportMessage message, final Throwable e)
     {
         if (message != null && e != null)
         {
@@ -172,7 +192,7 @@ public class IotHubTransport implements IotHubListener
     }
 
     @Override
-    public void onConnectionLost(Throwable e, String connectionId)
+    public void onConnectionLost(final Throwable e, final String connectionId)
     {
         synchronized (this.reconnectionLock)
         {
@@ -211,7 +231,7 @@ public class IotHubTransport implements IotHubListener
     }
 
     @Override
-    public void onConnectionEstablished(String connectionId)
+    public void onConnectionEstablished(final String connectionId)
     {
         if (connectionId.equals(this.iotHubTransportConnection.getConnectionId()))
         {
@@ -235,7 +255,7 @@ public class IotHubTransport implements IotHubListener
      * @throws DeviceClientException if a communication channel cannot be
      * established.
      */
-    public void open(Collection<DeviceClientConfig> deviceClientConfigs) throws DeviceClientException
+    public void open(final Collection<DeviceClientConfig> deviceClientConfigs) throws DeviceClientException
     {
         if ((deviceClientConfigs == null) || deviceClientConfigs.isEmpty())
         {
@@ -275,6 +295,14 @@ public class IotHubTransport implements IotHubListener
         log.info("Client connection opened successfully");
     }
 
+    public void addDeviceClientConfig(final DeviceClientConfig deviceClientConfig) throws TransportException {
+      deviceClientConfigs.add(deviceClientConfig);
+
+      if (iotHubTransportConnection instanceof AmqpsIotHubConnection) {
+        ((AmqpsIotHubConnection) this.iotHubTransportConnection).addAfterOpen(deviceClientConfig);
+      }
+    }
+
     /**
      * Closes all resources used to communicate with an IoT Hub. Once {@code close()} is
      * called, the transport is no longer usable. If the transport is already
@@ -285,7 +313,7 @@ public class IotHubTransport implements IotHubListener
      *
      * @throws DeviceClientException if an error occurs in closing the transport.
      */
-    public void close(IotHubConnectionStatusChangeReason reason, Throwable cause) throws DeviceClientException
+    public void close(final IotHubConnectionStatusChangeReason reason, final Throwable cause) throws DeviceClientException
     {
         if (reason == null)
         {
@@ -332,7 +360,7 @@ public class IotHubTransport implements IotHubListener
      * @param callbackContext the context to be passed in when the callback is
      * invoked.
      */
-    public void addMessage(Message message, IotHubEventCallback callback, Object callbackContext)
+    public void addMessage(final Message message, final IotHubEventCallback callback, final Object callbackContext)
     {
         if (this.connectionStatus == IotHubConnectionStatus.DISCONNECTED)
         {
@@ -343,7 +371,7 @@ public class IotHubTransport implements IotHubListener
 
         //Codes_SRS_IOTHUBTRANSPORT_34_042: [This function shall build a transport packet from the provided message,
         // callback, and context and then add that packet to the waiting queue.]
-        IotHubTransportPacket packet = new IotHubTransportPacket(message, callback, callbackContext, null, System.currentTimeMillis());
+        final IotHubTransportPacket packet = new IotHubTransportPacket(message, callback, callbackContext, null, System.currentTimeMillis());
         this.waitingPacketsQueue.add(packet);
         log.info("Message was queued to be sent later ({})", message);
     }
@@ -368,10 +396,10 @@ public class IotHubTransport implements IotHubListener
 
         while (this.connectionStatus == IotHubConnectionStatus.CONNECTED && timeSlice-- > 0)
         {
-            IotHubTransportPacket packet = waitingPacketsQueue.poll();
+            final IotHubTransportPacket packet = waitingPacketsQueue.poll();
             if (packet != null)
             {
-                Message message = packet.getMessage();
+                final Message message = packet.getMessage();
                 log.trace("Dequeued a message from waiting queue to be sent ({})", message);
 
                 if (message != null && this.isMessageValid(packet))
@@ -388,7 +416,7 @@ public class IotHubTransport implements IotHubListener
     {
         //Check waiting packets
         IotHubTransportPacket packet = this.waitingPacketsQueue.poll();
-        Queue<IotHubTransportPacket> packetsToAddBackIntoWaitingPacketsQueue = new LinkedBlockingQueue<>();
+        final Queue<IotHubTransportPacket> packetsToAddBackIntoWaitingPacketsQueue = new LinkedBlockingQueue<>();
         while (packet != null)
         {
             if (packet.getMessage().isExpired())
@@ -410,8 +438,8 @@ public class IotHubTransport implements IotHubListener
         //Check in progress messages
         synchronized (this.inProgressMessagesLock)
         {
-            List<String> expiredPacketMessageIds = new ArrayList<>();
-            for (String messageId : this.inProgressPackets.keySet())
+            final List<String> expiredPacketMessageIds = new ArrayList<>();
+            for (final String messageId : this.inProgressPackets.keySet())
             {
                 if (this.inProgressPackets.get(messageId).getMessage().isExpired())
                 {
@@ -419,9 +447,9 @@ public class IotHubTransport implements IotHubListener
                 }
             }
 
-            for (String messageId : expiredPacketMessageIds)
+            for (final String messageId : expiredPacketMessageIds)
             {
-                IotHubTransportPacket expiredPacket = this.inProgressPackets.remove(messageId);
+                final IotHubTransportPacket expiredPacket = this.inProgressPackets.remove(messageId);
                 expiredPacket.setStatus(IotHubStatusCode.MESSAGE_EXPIRED);
                 this.addToCallbackQueue(expiredPacket);
             }
@@ -436,9 +464,9 @@ public class IotHubTransport implements IotHubListener
         IotHubTransportPacket packet = this.callbackPacketsQueue.poll();
         while (packet != null)
         {
-            IotHubStatusCode status = packet.getStatus();
-            IotHubEventCallback callback = packet.getCallback();
-            Object context = packet.getContext();
+            final IotHubStatusCode status = packet.getStatus();
+            final IotHubEventCallback callback = packet.getCallback();
+            final Object context = packet.getContext();
 
             log.info("Invoking the callback function for sent message, IoT Hub responded to message ({}) with status {}", packet.getMessage(), status);
 
@@ -473,7 +501,7 @@ public class IotHubTransport implements IotHubListener
                 addReceivedMessagesOverHttpToReceivedQueue();
             }
 
-            IotHubTransportMessage receivedMessage = this.receivedMessagesQueue.poll();
+            final IotHubTransportMessage receivedMessage = this.receivedMessagesQueue.poll();
             if (receivedMessage != null)
             {
                 //Codes_SRS_IOTHUBTRANSPORT_34_048: [If this object's connection status is CONNECTED and there is a
@@ -507,7 +535,7 @@ public class IotHubTransport implements IotHubListener
      * @param callbackContext a context to be passed to the callback. Can be
      * {@code null} if no callback is provided.
      */
-    public void registerConnectionStateCallback(IotHubConnectionStateCallback callback, Object callbackContext)
+    public void registerConnectionStateCallback(final IotHubConnectionStateCallback callback, final Object callbackContext)
     {
         if (callback == null)
         {
@@ -526,7 +554,7 @@ public class IotHubTransport implements IotHubListener
      * @param callback the callback to be called. Can be null if callbackContext is not null
      * @param callbackContext a context to be passed to the callback. Can be {@code null}.
      */
-    public void registerConnectionStatusChangeCallback(IotHubConnectionStatusChangeCallback callback, Object callbackContext)
+    public void registerConnectionStatusChangeCallback(final IotHubConnectionStatusChangeCallback callback, final Object callbackContext)
     {
         if (callbackContext != null && callback == null)
         {
@@ -559,9 +587,9 @@ public class IotHubTransport implements IotHubListener
         {
             //Codes_SRS_IOTHUBTRANSPORT_34_022: [This function shall move all in progress messages to the callback queue
             // with status MESSAGE_CANCELLED_ONCLOSE.]
-            for (Map.Entry<String, IotHubTransportPacket> packetEntry : inProgressPackets.entrySet())
+            for (final Map.Entry<String, IotHubTransportPacket> packetEntry : inProgressPackets.entrySet())
             {
-                IotHubTransportPacket inProgressPacket = packetEntry.getValue();
+                final IotHubTransportPacket inProgressPacket = packetEntry.getValue();
                 inProgressPacket.setStatus(IotHubStatusCode.MESSAGE_CANCELLED_ONCLOSE);
                 this.addToCallbackQueue(inProgressPacket);
             }
@@ -576,17 +604,17 @@ public class IotHubTransport implements IotHubListener
      * @param receivedMessage the message to acknowledge
      * @throws TransportException if any exception is encountered while sending the acknowledgement
      */
-    private void acknowledgeReceivedMessage(IotHubTransportMessage receivedMessage) throws TransportException
+    private void acknowledgeReceivedMessage(final IotHubTransportMessage receivedMessage) throws TransportException
     {
-        MessageCallback messageCallback = receivedMessage.getMessageCallback();
-        Object messageCallbackContext = receivedMessage.getMessageCallbackContext();
+        final MessageCallback messageCallback = receivedMessage.getMessageCallback();
+        final Object messageCallbackContext = receivedMessage.getMessageCallbackContext();
 
         if (messageCallback != null)
         {
             this.log.debug("Executing callback for received message ({})", receivedMessage);
             //Codes_SRS_IOTHUBTRANSPORT_34_053: [This function shall execute the callback associate with the provided
             // transport message with the provided message and its saved callback context.]
-            IotHubMessageResult result = messageCallback.execute(receivedMessage, messageCallbackContext);
+            final IotHubMessageResult result = messageCallback.execute(receivedMessage, messageCallbackContext);
 
             try
             {
@@ -595,7 +623,7 @@ public class IotHubTransport implements IotHubListener
                 this.log.debug("Sending acknowledgement for received cloud to device message ({})", receivedMessage);
                 this.iotHubTransportConnection.sendMessageResult(receivedMessage, result);
             }
-            catch (TransportException e)
+            catch (final TransportException e)
             {
                 //Codes_SRS_IOTHUBTRANSPORT_34_055: [If an exception is thrown while acknowledging the received message,
                 // this function shall add the received message back into the receivedMessagesQueue and then rethrow the exception.]
@@ -613,7 +641,7 @@ public class IotHubTransport implements IotHubListener
     private void addReceivedMessagesOverHttpToReceivedQueue() throws TransportException
     {
         //since Http behaves synchronously, we need to check synchronously for any messages it may have received
-        IotHubTransportMessage transportMessage = ((HttpsIotHubConnection)this.iotHubTransportConnection).receiveMessage();
+        final IotHubTransportMessage transportMessage = ((HttpsIotHubConnection)this.iotHubTransportConnection).receiveMessage();
 
         if (transportMessage != null)
         {
@@ -628,11 +656,11 @@ public class IotHubTransport implements IotHubListener
      * @param e the throwable to map to an IotHubConnectionStatusChangeReason
      * @return the mapped IotHubConnectionStatusChangeReason
      */
-    private IotHubConnectionStatusChangeReason exceptionToStatusChangeReason(Throwable e)
+    private IotHubConnectionStatusChangeReason exceptionToStatusChangeReason(final Throwable e)
     {
         if (e instanceof TransportException)
         {
-            TransportException transportException = (TransportException) e;
+            final TransportException transportException = (TransportException) e;
             if (transportException.isRetryable())
             {
                 this.log.debug("Mapping throwable to NO_NETWORK because it was a retryable exception", e);
@@ -715,7 +743,7 @@ public class IotHubTransport implements IotHubListener
      * Attempts to reconnect. By the end of this call, the state of this object shall be either CONNECTED or DISCONNECTED
      * @param transportException
      */
-    private void handleDisconnection(TransportException transportException)
+    private void handleDisconnection(final TransportException transportException)
     {
         this.log.info("Handling a disconnection event", transportException);
 
@@ -765,7 +793,7 @@ public class IotHubTransport implements IotHubListener
             this.log.trace("Attempting reconnect attempt {}", this.currentReconnectionAttempt);
             this.currentReconnectionAttempt++;
 
-            RetryPolicy retryPolicy = this.defaultConfig.getRetryPolicy();
+            final RetryPolicy retryPolicy = this.defaultConfig.getRetryPolicy();
             retryDecision = retryPolicy.getRetryDecision(this.currentReconnectionAttempt, transportException);
             if (!retryDecision.shouldRetry())
             {
@@ -811,7 +839,7 @@ public class IotHubTransport implements IotHubListener
                 this.close(this.exceptionToStatusChangeReason(transportException), transportException);
             }
         }
-        catch (DeviceClientException ex)
+        catch (final DeviceClientException ex)
         {
             //Codes_SRS_IOTHUBTRANSPORT_34_071: [If an exception is encountered while closing, this function shall invoke
             // updateStatus with DISCONNECTED, COMMUNICATION_ERROR, and the last transport exception.]
@@ -834,7 +862,7 @@ public class IotHubTransport implements IotHubListener
             this.openConnection();
             this.log.trace("Successfully closed and re-opened the iot hub transport connection");
         }
-        catch (TransportException newTransportException)
+        catch (final TransportException newTransportException)
         {
             //Codes_SRS_IOTHUBTRANSPORT_34_062: [If an exception is encountered while closing or opening the connection,
             // this function shall invoke checkForUnauthorizedException on that exception and then return it.]
@@ -854,7 +882,7 @@ public class IotHubTransport implements IotHubListener
         final IotHubTransportPacket transportPacket;
         final Queue<IotHubTransportPacket> waitingPacketsQueue;
 
-        public MessageRetryRunnable(Queue<IotHubTransportPacket> waitingPacketsQueue, IotHubTransportPacket transportPacket)
+        public MessageRetryRunnable(final Queue<IotHubTransportPacket> waitingPacketsQueue, final IotHubTransportPacket transportPacket)
         {
             this.waitingPacketsQueue = waitingPacketsQueue;
             this.transportPacket = transportPacket;
@@ -873,7 +901,7 @@ public class IotHubTransport implements IotHubListener
      * @param packet the packet to retry
      * @param transportException the exception encountered while sending this packet before
      */
-    private void handleMessageException(IotHubTransportPacket packet, TransportException transportException)
+    private void handleMessageException(final IotHubTransportPacket packet, final TransportException transportException)
     {
         this.log.warn("Handling an exception from sending message: Attempt number {}", packet.getCurrentRetryAttempt(), transportException);
 
@@ -882,13 +910,13 @@ public class IotHubTransport implements IotHubListener
         {
             if (transportException.isRetryable())
             {
-                RetryDecision retryDecision = this.defaultConfig.getRetryPolicy().getRetryDecision(packet.getCurrentRetryAttempt(), transportException);
+                final RetryDecision retryDecision = this.defaultConfig.getRetryPolicy().getRetryDecision(packet.getCurrentRetryAttempt(), transportException);
                 if (retryDecision.shouldRetry())
                 {
                     //Codes_SRS_IOTHUBTRANSPORT_34_063: [If the provided transportException is retryable, the packet has not
                     // timed out, and the retry policy allows, this function shall schedule a task to add the provided
                     // packet to the waiting list after the amount of time determined by the retry policy.]
-                    this.taskScheduler.schedule(new MessageRetryRunnable(this.waitingPacketsQueue, packet), (long) retryDecision.getDuration(), MILLISECONDS);
+                    this.taskScheduler.schedule(new MessageRetryRunnable(this.waitingPacketsQueue, packet), retryDecision.getDuration(), MILLISECONDS);
                     return;
                 }
                 else
@@ -926,12 +954,12 @@ public class IotHubTransport implements IotHubListener
      * Sends a single packet over the iotHubTransportConnection and handles the response
      * @param packet the packet to send
      */
-    private void sendPacket(IotHubTransportPacket packet)
+    private void sendPacket(final IotHubTransportPacket packet)
     {
-        Message message = packet.getMessage();
+        final Message message = packet.getMessage();
 
         //Codes_SRS_IOTHUBTRANSPORT_34_072: [This function shall check if the provided message should expect an ACK or not.]
-        boolean messageAckExpected = !(message instanceof IotHubTransportMessage
+        final boolean messageAckExpected = !(message instanceof IotHubTransportMessage
                 && !((IotHubTransportMessage) message).isMessageAckNeeded(this.defaultConfig.getProtocol()));
 
         try
@@ -948,7 +976,7 @@ public class IotHubTransport implements IotHubListener
             //Codes_SRS_IOTHUBTRANSPORT_34_073: [This function shall send the provided message over the saved connection
             // and save the response code.]
             this.log.info("Sending message ({})", message);
-            IotHubStatusCode statusCode = this.iotHubTransportConnection.sendMessage(message);
+            final IotHubStatusCode statusCode = this.iotHubTransportConnection.sendMessage(message);
             this.log.trace("Sent message ({}) to protocol level, returned status code was {}", message, statusCode);
 
             if (statusCode != IotHubStatusCode.OK_EMPTY && statusCode != IotHubStatusCode.OK)
@@ -965,7 +993,7 @@ public class IotHubTransport implements IotHubListener
                 this.addToCallbackQueue(packet);
             }
         }
-        catch (TransportException transportException)
+        catch (final TransportException transportException)
         {
             this.log.warn("Encountered exception while sending message with correlation id {}", message.getCorrelationId(), transportException);
             IotHubTransportPacket outboundPacket;
@@ -993,9 +1021,9 @@ public class IotHubTransport implements IotHubListener
      * @param packet the packet to check for expiry
      * @return if the message has not expired and if the sas token has not expired
      */
-    private boolean isMessageValid(IotHubTransportPacket packet)
+    private boolean isMessageValid(final IotHubTransportPacket packet)
     {
-        Message message = packet.getMessage();
+        final Message message = packet.getMessage();
 
         if (message.isExpired())
         {
@@ -1032,7 +1060,7 @@ public class IotHubTransport implements IotHubListener
      * @param reason the reason for the new connection status
      * @param throwable the associated exception to the connection status change
      */
-    private void updateStatus(IotHubConnectionStatus newConnectionStatus, IotHubConnectionStatusChangeReason reason, Throwable throwable)
+    private void updateStatus(final IotHubConnectionStatus newConnectionStatus, final IotHubConnectionStatusChangeReason reason, final Throwable throwable)
     {
         //Codes_SRS_IOTHUBTRANSPORT_28_005:[This function shall updated the saved connection status if the connection status has changed.]
         //Codes_SRS_IOTHUBTRANSPORT_28_006:[This function shall invoke all callbacks listening for the state change if the connection status has changed.]
@@ -1068,7 +1096,7 @@ public class IotHubTransport implements IotHubListener
      * @param status the status to report
      * @param reason the reason to report
      */
-    private void invokeConnectionStateCallback(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason reason)
+    private void invokeConnectionStateCallback(final IotHubConnectionStatus status, final IotHubConnectionStatusChangeReason reason)
     {
         if (this.stateCallback != null)
         {
@@ -1093,7 +1121,7 @@ public class IotHubTransport implements IotHubListener
      * @param reason the reason for that status
      * @param e the associated exception. May be null
      */
-    private void invokeConnectionStatusChangeCallback(IotHubConnectionStatus status, IotHubConnectionStatusChangeReason reason, Throwable e)
+    private void invokeConnectionStatusChangeCallback(final IotHubConnectionStatus status, final IotHubConnectionStatusChangeReason reason, final Throwable e)
     {
         //Codes_SRS_IOTHUBTRANSPORT_28_004:[This function shall notify the connection status change callback if the callback is not null]
         if (this.connectionStatusChangeCallback != null)
@@ -1116,7 +1144,7 @@ public class IotHubTransport implements IotHubListener
      * Returns if the provided packet has lasted longer than the device operation timeout
      * @return true if the packet has been in the queues for longer than the device operation timeout and false otherwise
      */
-    private boolean hasOperationTimedOut(long startTime)
+    private boolean hasOperationTimedOut(final long startTime)
     {
         if (startTime == 0)
         {
@@ -1133,7 +1161,7 @@ public class IotHubTransport implements IotHubListener
      * Adds the packet to the callback queue if the provided packet has a callback. The packet is ignored otherwise.
      * @param packet the packet to add
      */
-    private void addToCallbackQueue(IotHubTransportPacket packet)
+    private void addToCallbackQueue(final IotHubTransportPacket packet)
     {
         //Codes_SRS_IOTHUBTRANSPORT_28_002: [This function shall add the packet to the callback queue if it has a callback.]
         if (packet.getCallback() != null)
@@ -1147,13 +1175,13 @@ public class IotHubTransport implements IotHubListener
      * @param sleepFor length of time to sleep for
      * @param unit time unit associated with sleepFor
      */
-    private static void sleepUninterruptibly(long sleepFor, TimeUnit unit)
+    private static void sleepUninterruptibly(final long sleepFor, final TimeUnit unit)
     {
         boolean interrupted = false;
         try
         {
             long remainingNanos = unit.toNanos(sleepFor);
-            long end = System.nanoTime() + remainingNanos;
+            final long end = System.nanoTime() + remainingNanos;
             while (true)
             {
                 try
@@ -1161,7 +1189,7 @@ public class IotHubTransport implements IotHubListener
                     NANOSECONDS.sleep(remainingNanos);
                     return;
                 }
-                catch (InterruptedException e)
+                catch (final InterruptedException e)
                 {
                     interrupted = true;
                     remainingNanos = end - System.nanoTime();
@@ -1182,7 +1210,7 @@ public class IotHubTransport implements IotHubListener
      * transportException as retryable
      * @param transportException the transport exception to check
      */
-    private void checkForUnauthorizedException(TransportException transportException)
+    private void checkForUnauthorizedException(final TransportException transportException)
     {
         //Codes_SRS_IOTHUBTRANSPORT_28_001: [This function shall set the MqttUnauthorizedException, UnauthorizedException or
         //AmqpUnauthorizedAccessException as retryable if the sas token has not expired.]

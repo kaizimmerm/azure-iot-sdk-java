@@ -1,18 +1,17 @@
 package com.microsoft.azure.sdk.iot.device;
 
-import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>
  * The public-facing API. Allows user to create a transport client
- * abstracton object to use it for multiple devices to connect 
- * to an IoT Hub using the same connection (multiplexing). 
+ * abstracton object to use it for multiple devices to connect
+ * to an IoT Hub using the same connection (multiplexing).
  * Handle to register devices to transport client and open / closeNow
- * the connection. 
+ * the connection.
  * </p>
  * The multiplexed connection is supported with AMQPS / AMQPS_WS protocols.
  */
@@ -28,11 +27,11 @@ public class TransportClient
     public static long SEND_PERIOD_MILLIS = 10L;
     public static long RECEIVE_PERIOD_MILLIS_AMQPS = 10L;
 
-    private IotHubClientProtocol iotHubClientProtocol;
+    private final IotHubClientProtocol iotHubClientProtocol;
     private DeviceIO deviceIO;
     private TransportClientState transportClientState;
 
-    private ArrayList<DeviceClient> deviceClientList;
+    private final ArrayList<DeviceClient> deviceClientList;
 
     /**
      * Constructor that takes a protocol as an argument.
@@ -41,7 +40,7 @@ public class TransportClient
      *
      * @throws IllegalArgumentException if other protocol given.
      */
-    public TransportClient(IotHubClientProtocol protocol)
+    public TransportClient(final IotHubClientProtocol protocol)
     {
         // Codes_SRS_TRANSPORTCLIENT_12_001: [If the `protocol` is not valid, the constructor shall throw an IllegalArgumentException.]
         switch (protocol)
@@ -144,7 +143,7 @@ public class TransportClient
      * @param newIntervalInMilliseconds the new interval in milliseconds
      * @throws IOException if the given number is less or equal to zero.
      */
-    public void setSendInterval(long newIntervalInMilliseconds) throws IOException
+    public void setSendInterval(final long newIntervalInMilliseconds) throws IOException
     {
         if (newIntervalInMilliseconds <= 0)
         {
@@ -172,7 +171,7 @@ public class TransportClient
      * @param retryPolicy the new interval in milliseconds
      * @throws UnsupportedOperationException if no device client has been registered yet.
      */
-    public void setRetryPolicy(RetryPolicy retryPolicy)
+    public void setRetryPolicy(final RetryPolicy retryPolicy)
     {
         if (deviceClientList.size() == 0)
         {
@@ -195,7 +194,7 @@ public class TransportClient
      * @throws IllegalArgumentException if the deviceClient parameter is null.
      * @throws IllegalStateException if the connection is open.
      */
-    void registerDeviceClient(DeviceClient deviceClient) throws IllegalArgumentException, IllegalStateException
+    void registerDeviceClient(final DeviceClient deviceClient) throws IllegalArgumentException, IllegalStateException
     {
         // Codes_SRS_TRANSPORTCLIENT_12_005: [The function shall throw  IllegalArgumentException if the deviceClient parameter is null.]
         if (deviceClient == null)
@@ -233,4 +232,18 @@ public class TransportClient
         // Codes_SRS_TRANSPORTCLIENT_12_019: [The getter shall return with the value of the transportClientState.]
         return this.transportClientState;
     }
+
+    public void addDeviceClient(final DeviceClient deviceClient) throws IllegalArgumentException, IllegalStateException {
+      if ((deviceIO == null) || (!deviceIO.isOpen()))
+      {
+          throw new IllegalStateException("The transport client connection is not open yes. Use register function instead.");
+      }
+
+      deviceClientList.add(deviceClient);
+      deviceClient.setDeviceIO(deviceIO);
+      deviceIO.addClient(deviceClient.getConfig());
+
+   }
+
+
 }

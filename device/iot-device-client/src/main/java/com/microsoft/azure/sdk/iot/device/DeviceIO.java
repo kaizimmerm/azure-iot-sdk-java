@@ -3,18 +3,18 @@
 
 package com.microsoft.azure.sdk.iot.device;
 
-import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubReceiveTask;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubSendTask;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubTransport;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
+import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubReceiveTask;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubSendTask;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubTransport;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  *     +-------------------------------------+                  +-----------------------------------+
@@ -79,8 +79,8 @@ public final class DeviceIO
     private long sendPeriodInMilliseconds;
     private long receivePeriodInMilliseconds;
 
-    private IotHubTransport transport;
-    private DeviceClientConfig config;
+    private final IotHubTransport transport;
+    private final DeviceClientConfig config;
     private IotHubSendTask sendTask = null;
     private IotHubReceiveTask receiveTask = null;
     private IotHubClientProtocol protocol = null;
@@ -88,7 +88,7 @@ public final class DeviceIO
     private ScheduledExecutorService taskScheduler;
     private IotHubClientState state;
 
-    private List<DeviceClientConfig> deviceClientConfigs = new LinkedList<>();
+    private final List<DeviceClientConfig> deviceClientConfigs = new LinkedList<>();
 
     /**
      * Constructor that takes a connection string as an argument.
@@ -100,7 +100,7 @@ public final class DeviceIO
      * @throws IllegalArgumentException if any of {@code config} or
      * {@code protocol} are {@code null}.
      */
-    DeviceIO(DeviceClientConfig config, long sendPeriodInMilliseconds, long receivePeriodInMilliseconds)
+    DeviceIO(final DeviceClientConfig config, final long sendPeriodInMilliseconds, final long receivePeriodInMilliseconds)
     {
         /* Codes_SRS_DEVICE_IO_21_002: [If the `config` is null, the constructor shall throw an IllegalArgumentException.] */
         if(config == null)
@@ -157,7 +157,7 @@ public final class DeviceIO
         {
             this.transport.open(deviceClientConfigs);
         }
-        catch (DeviceClientException e)
+        catch (final DeviceClientException e)
         {
             throw new IOException("Could not open the connection", e);
         }
@@ -170,16 +170,27 @@ public final class DeviceIO
     /**
      * Adds a device client config to the saved list. Each device client config will be used in multiplexing
      * @param config the config tied to the device client to multiplex with
+     * @throws TransportException
      */
-    void addClient(DeviceClientConfig config)
+    void addClient(final DeviceClientConfig deviceClientConfig)
     {
-        if (config == null)
+        if (deviceClientConfig == null)
         {
             throw new IllegalArgumentException("Config cannot be null");
         }
 
         // add client to transport
-        deviceClientConfigs.add(config);
+        deviceClientConfigs.add(deviceClientConfig);
+
+        if (this.state == IotHubClientState.OPEN)
+        {
+            try {
+              transport.addDeviceClientConfig(deviceClientConfig);
+            } catch (final TransportException e) {
+              // TODO Auto-generated catch block
+              e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -227,7 +238,7 @@ public final class DeviceIO
         {
             this.transport.close(IotHubConnectionStatusChangeReason.CLIENT_CLOSE, null);
         }
-        catch (DeviceClientException e)
+        catch (final DeviceClientException e)
         {
             this.state = IotHubClientState.CLOSED;
             throw new IOException(e);
@@ -264,10 +275,10 @@ public final class DeviceIO
      * @throws IllegalArgumentException if the message provided is {@code null}.
      * @throws IllegalStateException if the client has not been opened yet or is already closed.
      */
-    public synchronized void sendEventAsync(Message message,
-                               IotHubEventCallback callback,
-                               Object callbackContext,
-                               String deviceId)
+    public synchronized void sendEventAsync(final Message message,
+                               final IotHubEventCallback callback,
+                               final Object callbackContext,
+                               final String deviceId)
     {
         /* Codes_SRS_DEVICE_IO_21_024: [If the client is closed, the sendEventAsync shall throw an IllegalStateException.] */
         if (this.state == IotHubClientState.CLOSED)
@@ -311,7 +322,7 @@ public final class DeviceIO
      * @throws IOException if the task schedule exist but there is no receive task function to call.
      * @throws IllegalArgumentException if the provided interval is invalid (zero or negative).
      */
-    public void setReceivePeriodInMilliseconds(long newIntervalInMilliseconds) throws IOException
+    public void setReceivePeriodInMilliseconds(final long newIntervalInMilliseconds) throws IOException
     {
         /* Codes_SRS_DEVICE_IO_21_030: [If the the provided interval is zero or negative, the setReceivePeriodInMilliseconds shall throw IllegalArgumentException.] */
         if(newIntervalInMilliseconds <= 0L)
@@ -354,7 +365,7 @@ public final class DeviceIO
      * @throws IOException if the task schedule exist but there is no send task function to call.
      * @throws IllegalArgumentException if the provided interval is invalid (zero or negative).
      */
-    public void setSendPeriodInMilliseconds(long newIntervalInMilliseconds) throws IOException
+    public void setSendPeriodInMilliseconds(final long newIntervalInMilliseconds) throws IOException
     {
         /* Codes_SRS_DEVICE_IO_21_036: [If the the provided interval is zero or negative, the setSendPeriodInMilliseconds shall throw IllegalArgumentException.] */
         if(newIntervalInMilliseconds <= 0L)
@@ -418,13 +429,13 @@ public final class DeviceIO
      * @param callbackContext a context to be passed to the callback. Can be
      * {@code null} if no callback is provided.
      */
-    public void registerConnectionStateCallback(IotHubConnectionStateCallback callback, Object callbackContext)
+    public void registerConnectionStateCallback(final IotHubConnectionStateCallback callback, final Object callbackContext)
     {
         /* Codes_SRS_DEVICE_IO_99_001: [The registerConnectionStateCallback shall register the callback with the transport.]*/
         this.transport.registerConnectionStateCallback(callback, callbackContext);
     }
 
-    public void registerConnectionStatusChangeCallback(IotHubConnectionStatusChangeCallback statusChangeCallback, Object callbackContext)
+    public void registerConnectionStatusChangeCallback(final IotHubConnectionStatusChangeCallback statusChangeCallback, final Object callbackContext)
     {
         //Codes_SRS_DEVICE_IO_34_020: [This function shall register the callback with the transport.]
         this.transport.registerConnectionStatusChangeCallback(statusChangeCallback, callbackContext);

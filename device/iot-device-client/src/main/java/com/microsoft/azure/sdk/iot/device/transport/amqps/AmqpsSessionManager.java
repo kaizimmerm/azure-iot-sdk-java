@@ -1,19 +1,18 @@
 package com.microsoft.azure.sdk.iot.device.transport.amqps;
 
-import com.microsoft.azure.sdk.iot.device.DeviceClientConfig;
-import com.microsoft.azure.sdk.iot.device.MessageType;
-import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.engine.Transport;
-
-import java.util.ArrayList;
+import com.microsoft.azure.sdk.iot.device.DeviceClientConfig;
+import com.microsoft.azure.sdk.iot.device.MessageType;
+import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
- * Manage multiple device clients and the authentication 
+ * Manage multiple device clients and the authentication
  * mechanism
  */
 @Slf4j
@@ -23,15 +22,15 @@ public class AmqpsSessionManager
     protected Session session = null;
 
     private AmqpsDeviceAuthentication amqpsDeviceAuthentication;
-    private ArrayList<AmqpsSessionDeviceOperation> amqpsDeviceSessionList = new ArrayList<>();
+    private final ArrayList<AmqpsSessionDeviceOperation> amqpsDeviceSessionList = new ArrayList<>();
 
     /**
      * Constructor that takes a device configuration.
      *
-     * @param deviceClientConfig the device configuration to use for 
+     * @param deviceClientConfig the device configuration to use for
      *                           session management.
      */
-    public AmqpsSessionManager(DeviceClientConfig deviceClientConfig)
+    public AmqpsSessionManager(final DeviceClientConfig deviceClientConfig)
     {
         // Codes_SRS_AMQPSESSIONMANAGER_12_001: [The constructor shall throw IllegalArgumentException if the deviceClientConfig parameter is null.]
         if (deviceClientConfig == null)
@@ -64,7 +63,7 @@ public class AmqpsSessionManager
      *
      * @param deviceClientConfig the device to register.
      */
-    final void addDeviceOperationSession(DeviceClientConfig deviceClientConfig)
+    final AmqpsSessionDeviceOperation addDeviceOperationSession(final DeviceClientConfig deviceClientConfig)
     {
         // Codes_SRS_AMQPSESSIONMANAGER_12_008: [The function shall throw IllegalArgumentException if the deviceClientConfig parameter is null.]
         if (deviceClientConfig == null)
@@ -73,8 +72,10 @@ public class AmqpsSessionManager
         }
 
         // Codes_SRS_AMQPSESSIONMANAGER_12_009: [The function shall create a new  AmqpsSessionDeviceOperation with the given deviceClientConfig and add it to the session list.]
-        AmqpsSessionDeviceOperation amqpsSessionDeviceOperation = new AmqpsSessionDeviceOperation(deviceClientConfig, this.amqpsDeviceAuthentication);
+        final AmqpsSessionDeviceOperation amqpsSessionDeviceOperation = new AmqpsSessionDeviceOperation(deviceClientConfig, this.amqpsDeviceAuthentication);
         this.amqpsDeviceSessionList.add(amqpsSessionDeviceOperation);
+
+        return amqpsSessionDeviceOperation;
     }
 
     /**
@@ -126,7 +127,7 @@ public class AmqpsSessionManager
         }
     }
 
-    protected void subscribeDeviceToMessageType(MessageType messageType, String deviceId)
+    protected void subscribeDeviceToMessageType(final MessageType messageType, final String deviceId)
     {
         this.log.trace("Subscribing to {}", messageType);
         // Codes_SRS_AMQPSESSIONMANAGER_12_018: [The function shall do nothing if the session is not open.]
@@ -144,13 +145,13 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Event handler for connection initialization. 
-     * Open the session and the links. 
+     * Event handler for connection initialization.
+     * Open the session and the links.
      *
      * @param connection the Proton connection object to work with.
      * @return true if connection is ready, otherwise false to indicate authentication links open in progress
      */
-    void onConnectionInit(Connection connection) throws TransportException
+    void onConnectionInit(final Connection connection) throws TransportException
     {
         if (connection != null)
         {
@@ -166,7 +167,7 @@ public class AmqpsSessionManager
         }
     }
 
-    void onSessionRemoteOpen(Session session)
+    void onSessionRemoteOpen(final Session session)
     {
         if (this.amqpsDeviceAuthentication instanceof AmqpsDeviceAuthenticationCBS)
         {
@@ -198,12 +199,12 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Event handler for connection bond. 
+     * Event handler for connection bond.
      * Set the SSL domain and the SSL context.
      *
      * @param transport the Proton transport object to work with.
      */
-    void onConnectionBound(Transport transport) throws TransportException
+    void onConnectionBound(final Transport transport) throws TransportException
     {
         if (this.session != null)
         {
@@ -213,15 +214,15 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Event handler for link initialization. 
-     * If the manager is in opening state initialize the 
-     * authentication links. 
-     * If the manager is in opened state initialize the operation 
-     * links. 
+     * Event handler for link initialization.
+     * If the manager is in opening state initialize the
+     * authentication links.
+     * If the manager is in opened state initialize the operation
+     * links.
      *
      * @param link the link to initialize.
      */
-    void onLinkInit(Link link)
+    void onLinkInit(final Link link)
     {
         if (this.session != null)
         {
@@ -242,19 +243,19 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Event handler for link open. 
-     * If the manager is in opening state check the authentication 
-     * links state. 
-     * If the manager is in opened state check the operation links 
-     * state. 
+     * Event handler for link open.
+     * If the manager is in opening state check the authentication
+     * links state.
+     * If the manager is in opened state check the operation links
+     * state.
      *
      * @param link Proton link object that was opened
      *
      * @return Boolean true if all links open, false otherwise.
      */
-    boolean onLinkRemoteOpen(Link link)
+    boolean onLinkRemoteOpen(final Link link)
     {
-        String linkName = link.getName();
+        final String linkName = link.getName();
         if (this.isAuthenticationOpened())
         {
             for (int i = 0; i < this.amqpsDeviceSessionList.size(); i++)
@@ -279,15 +280,15 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Delegate the send call to device operation objects. 
-     * Loop through the device operation list and find the sender 
-     * object by message type and deviceId (connection string). 
+     * Delegate the send call to device operation objects.
+     * Loop through the device operation list and find the sender
+     * object by message type and deviceId (connection string).
      *
      * @param message the message to send.
-     * @param messageType the message type to find the sender. 
+     * @param messageType the message type to find the sender.
      * @return Integer
      */
-    Integer sendMessage(org.apache.qpid.proton.message.Message message, MessageType messageType, String deviceId) throws TransportException
+    Integer sendMessage(final org.apache.qpid.proton.message.Message message, final MessageType messageType, final String deviceId) throws TransportException
     {
         Integer deliveryTag = -1;
 
@@ -310,14 +311,14 @@ public class AmqpsSessionManager
     /**
      * Delegate the onDelivery call to device operation objects.
      * Loop through the device operation list and find the receiver `
-     * object by link name. 
+     * object by link name.
      *
      * @param linkName the link name to identify the receiver.
      *
-     * @return AmqpsMessage if the receiver found the received 
+     * @return AmqpsMessage if the receiver found the received
      *         message, otherwise null.
      */
-    AmqpsMessage getMessageFromReceiverLink(String linkName) throws IllegalArgumentException, TransportException
+    AmqpsMessage getMessageFromReceiverLink(final String linkName) throws IllegalArgumentException, TransportException
     {
         AmqpsMessage amqpsMessage = null;
 
@@ -366,15 +367,15 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Find the converter to convert from IoTHub message to Proton 
+     * Find the converter to convert from IoTHub message to Proton
      * message.
      *
      * @param message the message to convert.
      *
-     * @return AmqpsConvertToProtonReturnValue the result of the 
+     * @return AmqpsConvertToProtonReturnValue the result of the
      *         conversion containing the Proton message.
      */
-    AmqpsConvertToProtonReturnValue convertToProton(com.microsoft.azure.sdk.iot.device.Message message) throws TransportException
+    AmqpsConvertToProtonReturnValue convertToProton(final com.microsoft.azure.sdk.iot.device.Message message) throws TransportException
     {
         AmqpsConvertToProtonReturnValue amqpsConvertToProtonReturnValue = null;
 
@@ -392,20 +393,20 @@ public class AmqpsSessionManager
     }
 
     /**
-     * Find the converter to convert Proton message to IoTHub 
-     * message. Loop through the managed devices and find the 
-     * converter. 
+     * Find the converter to convert Proton message to IoTHub
+     * message. Loop through the managed devices and find the
+     * converter.
      *
      * @param amqpsMessage the Proton message to convert.
      * @param deviceClientConfig the device client configuration for
      *                           add identification data to the
      *                           message.
      *
-     * @return AmqpsConvertFromProtonReturnValue the result of the 
+     * @return AmqpsConvertFromProtonReturnValue the result of the
      *         conversion containing the IoTHub message.
      * @throws TransportException if converting the message fails
      */
-    AmqpsConvertFromProtonReturnValue convertFromProton(AmqpsMessage amqpsMessage, DeviceClientConfig deviceClientConfig) throws TransportException
+    AmqpsConvertFromProtonReturnValue convertFromProton(final AmqpsMessage amqpsMessage, final DeviceClientConfig deviceClientConfig) throws TransportException
     {
         AmqpsConvertFromProtonReturnValue amqpsConvertFromProtonReturnValue = null;
 
@@ -425,7 +426,7 @@ public class AmqpsSessionManager
     int getExpectedWorkerLinkCount()
     {
         int expectedWorkerLinkCount = 0;
-        for (AmqpsSessionDeviceOperation deviceOperation : this.amqpsDeviceSessionList)
+        for (final AmqpsSessionDeviceOperation deviceOperation : this.amqpsDeviceSessionList)
         {
             expectedWorkerLinkCount += deviceOperation.getExpectedWorkerLinkCount();
         }
@@ -433,9 +434,9 @@ public class AmqpsSessionManager
         return expectedWorkerLinkCount;
     }
 
-    public void onLinkRemoteClose(Link link)
+    public void onLinkRemoteClose(final Link link)
     {
-        String linkName = link.getName();
+        final String linkName = link.getName();
 
         for (int i = 0; i < this.amqpsDeviceSessionList.size(); i++)
         {

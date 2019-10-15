@@ -3,13 +3,6 @@
 
 package com.microsoft.azure.sdk.iot.device;
 
-import com.microsoft.azure.sdk.iot.deps.serializer.ParserUtility;
-import com.microsoft.azure.sdk.iot.device.DeviceTwin.*;
-import com.microsoft.azure.sdk.iot.device.fileupload.FileUpload;
-import com.microsoft.azure.sdk.iot.device.transport.amqps.IoTHubConnectionType;
-import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProvider;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.Closeable;
 import java.io.IOError;
 import java.io.IOException;
@@ -17,6 +10,15 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import com.microsoft.azure.sdk.iot.deps.serializer.ParserUtility;
+import com.microsoft.azure.sdk.iot.device.TransportClient.TransportClientState;
+import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodCallback;
+import com.microsoft.azure.sdk.iot.device.DeviceTwin.PropertyCallBack;
+import com.microsoft.azure.sdk.iot.device.DeviceTwin.TwinPropertyCallBack;
+import com.microsoft.azure.sdk.iot.device.fileupload.FileUpload;
+import com.microsoft.azure.sdk.iot.device.transport.amqps.IoTHubConnectionType;
+import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProvider;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>
@@ -122,7 +124,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws URISyntaxException if the hostname in the connection string is not a valid URI
      * @throws UnsupportedOperationException if the connection string belongs to a module rather than a device
      */
-    public DeviceClient(String connString, TransportClient transportClient) throws URISyntaxException, IllegalArgumentException, UnsupportedOperationException
+    public DeviceClient(final String connString, final TransportClient transportClient) throws URISyntaxException, IllegalArgumentException, UnsupportedOperationException
     {
         // Codes_SRS_DEVICECLIENT_12_009: [The constructor shall interpret the connection string as a set of key-value pairs delimited by ';', using the object IotHubConnectionString.]
         this.config = new DeviceClientConfig(new IotHubConnectionString(connString));
@@ -140,7 +142,7 @@ public final class DeviceClient extends InternalClient implements Closeable
         // Codes_SRS_DEVICECLIENT_12_016: [The constructor shall save the transportClient parameter.]
         this.transportClient = transportClient;
 
-        String moduleId = this.getConfig().getModuleId();
+        final String moduleId = this.getConfig().getModuleId();
         if (!(moduleId == null || moduleId.isEmpty()))
         {
             // Codes_SRS_DEVICECLIENT_34_073: [If this constructor is called with a connection string that contains a moduleId, this function shall throw an UnsupportedOperationException.]
@@ -150,7 +152,11 @@ public final class DeviceClient extends InternalClient implements Closeable
         this.getConfig().setProtocol(this.transportClient.getIotHubClientProtocol());
 
         // Codes_SRS_DEVICECLIENT_12_017: [The constructor shall register the device client with the transport client.]
-        this.transportClient.registerDeviceClient(this);
+        if (transportClient.getTransportClientState() == TransportClientState.OPENED) {
+          this.transportClient.addDeviceClient(this);
+        } else {
+          this.transportClient.registerDeviceClient(this);
+        }
     }
 
     /**
@@ -169,7 +175,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * RFC 3986 or if the provided {@code connString} is for an x509 authenticated device
      * @throws URISyntaxException if the hostname in the connection string is not a valid URI
      */
-    public DeviceClient(String connString, IotHubClientProtocol protocol) throws URISyntaxException, IllegalArgumentException
+    public DeviceClient(final String connString, final IotHubClientProtocol protocol) throws URISyntaxException, IllegalArgumentException
     {
         // Codes_SRS_DEVICECLIENT_21_001: [The constructor shall interpret the connection string as a set of key-value pairs delimited by ';', using the object IotHubConnectionString.]
         super(new IotHubConnectionString(connString), protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
@@ -203,7 +209,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @param isPrivateKeyPath if the provided privateKey is a path to a file containing the PEM formatted private key
      * @throws URISyntaxException if the hostname in the connection string is not a valid URI
      */
-    public DeviceClient(String connString, IotHubClientProtocol protocol, String publicKeyCertificate, boolean isCertificatePath, String privateKey, boolean isPrivateKeyPath) throws URISyntaxException
+    public DeviceClient(final String connString, final IotHubClientProtocol protocol, final String publicKeyCertificate, final boolean isCertificatePath, final String privateKey, final boolean isPrivateKeyPath) throws URISyntaxException
     {
         // Codes_SRS_DEVICECLIENT_34_058: [The constructor shall interpret the connection string as a set of key-value pairs delimited by ';', using the object IotHubConnectionString.]
         // Codes_SRS_DEVICECLIENT_34_074: [If the provided connection string contains a module id field, this function shall throw an UnsupportedOperationException.]
@@ -226,7 +232,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws URISyntaxException If the provided connString could not be parsed.
      * @throws IOException If the SecurityProvider throws any exception while authenticating
      */
-    public static DeviceClient createFromSecurityProvider(String uri, String deviceId, SecurityProvider securityProvider, IotHubClientProtocol protocol) throws URISyntaxException, IOException
+    public static DeviceClient createFromSecurityProvider(final String uri, final String deviceId, final SecurityProvider securityProvider, final IotHubClientProtocol protocol) throws URISyntaxException, IOException
     {
         return new DeviceClient(uri, deviceId, securityProvider, protocol);
     }
@@ -244,7 +250,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws IllegalStateException if the callback is set after the client is
      * closed.
      */
-    public DeviceClient setMessageCallback(MessageCallback callback, Object context) throws IllegalArgumentException
+    public DeviceClient setMessageCallback(final MessageCallback callback, final Object context) throws IllegalArgumentException
     {
         this.setMessageCallbackInternal(callback, context);
         return this;
@@ -261,7 +267,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws URISyntaxException If the provided connString could not be parsed.
      * @throws IOException If the SecurityProvider throws any exception while authenticating
      */
-    private DeviceClient(String uri, String deviceId, SecurityProvider securityProvider, IotHubClientProtocol protocol) throws URISyntaxException, IOException
+    private DeviceClient(final String uri, final String deviceId, final SecurityProvider securityProvider, final IotHubClientProtocol protocol) throws URISyntaxException, IOException
     {
         super(uri, deviceId, securityProvider, protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
         commonConstructorSetup();
@@ -295,6 +301,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      *
      * @throws IOException if a connection to an IoT Hub cannot be established.
      */
+    @Override
     public void open() throws IOException
     {
         if (this.ioTHubConnectionType == IoTHubConnectionType.USE_TRANSPORTCLIENT)
@@ -328,6 +335,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      *
      * @throws IOException if the connection to an IoT Hub cannot be closed.
      */
+    @Override
     @Deprecated
     public void close() throws IOException
     {
@@ -365,6 +373,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      *
      * @throws IOException if the connection to an IoT Hub cannot be closed.
      */
+    @Override
     public void closeNow() throws IOException
     {
         if (this.ioTHubConnectionType == IoTHubConnectionType.USE_TRANSPORTCLIENT)
@@ -407,8 +416,8 @@ public final class DeviceClient extends InternalClient implements Closeable
      *          empty or not valid, or if the callback is {@code null}.
      * @throws IOException if the client cannot create a instance of the FileUpload or the transport.
      */
-    public void uploadToBlobAsync(String destinationBlobName, InputStream inputStream, long streamLength,
-                                  IotHubEventCallback callback, Object callbackContext) throws IllegalArgumentException, IOException
+    public void uploadToBlobAsync(final String destinationBlobName, final InputStream inputStream, final long streamLength,
+                                  final IotHubEventCallback callback, final Object callbackContext) throws IllegalArgumentException, IOException
     {
         if (callback == null)
         {
@@ -456,8 +465,8 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws UnsupportedOperationException if called more than once on the same device
      * @throws IOException if called when client is not opened
      */
-    public void startDeviceTwin(IotHubEventCallback deviceTwinStatusCallback, Object deviceTwinStatusCallbackContext,
-                                        PropertyCallBack genericPropertyCallBack, Object genericPropertyCallBackContext)
+    public void startDeviceTwin(final IotHubEventCallback deviceTwinStatusCallback, final Object deviceTwinStatusCallbackContext,
+                                        final PropertyCallBack genericPropertyCallBack, final Object genericPropertyCallBackContext)
             throws IOException, IllegalArgumentException, UnsupportedOperationException
     {
         this.startTwinInternal(deviceTwinStatusCallback, deviceTwinStatusCallbackContext, genericPropertyCallBack, genericPropertyCallBackContext);
@@ -475,8 +484,8 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws UnsupportedOperationException if called more than once on the same device
      * @throws IOException if called when client is not opened
      */
-    public void startDeviceTwin(IotHubEventCallback deviceTwinStatusCallback, Object deviceTwinStatusCallbackContext,
-                                 TwinPropertyCallBack genericPropertyCallBack, Object genericPropertyCallBackContext)
+    public void startDeviceTwin(final IotHubEventCallback deviceTwinStatusCallback, final Object deviceTwinStatusCallbackContext,
+                                 final TwinPropertyCallBack genericPropertyCallBack, final Object genericPropertyCallBackContext)
             throws IOException, IllegalArgumentException, UnsupportedOperationException
     {
         this.startTwinInternal(deviceTwinStatusCallback, deviceTwinStatusCallbackContext, genericPropertyCallBack, genericPropertyCallBackContext);
@@ -491,7 +500,7 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws IllegalArgumentException if the provided callback is null
      */
     @Deprecated
-    public void registerConnectionStateCallback(IotHubConnectionStateCallback callback, Object callbackContext) throws IllegalArgumentException
+    public void registerConnectionStateCallback(final IotHubConnectionStateCallback callback, final Object callbackContext) throws IllegalArgumentException
     {
         if (null == callback)
         {
@@ -512,8 +521,8 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @throws IOException if called when client is not opened.
      * @throws IllegalArgumentException if either callback are null.
      */
-    public void subscribeToDeviceMethod(DeviceMethodCallback deviceMethodCallback, Object deviceMethodCallbackContext,
-                                        IotHubEventCallback deviceMethodStatusCallback, Object deviceMethodStatusCallbackContext)
+    public void subscribeToDeviceMethod(final DeviceMethodCallback deviceMethodCallback, final Object deviceMethodCallbackContext,
+                                        final IotHubEventCallback deviceMethodStatusCallback, final Object deviceMethodStatusCallbackContext)
             throws IOException, IllegalArgumentException
     {
         this.subscribeToMethodsInternal(deviceMethodCallback, deviceMethodCallbackContext, deviceMethodStatusCallback, deviceMethodStatusCallbackContext);
@@ -544,7 +553,8 @@ public final class DeviceClient extends InternalClient implements Closeable
      * @param value an object of the appropriate type for the option's value
      * @throws IllegalArgumentException if the provided optionName is null
      */
-    public void setOption(String optionName, Object value) throws IllegalArgumentException
+    @Override
+    public void setOption(final String optionName, final Object value) throws IllegalArgumentException
     {
         if (optionName == null)
         {
@@ -646,7 +656,7 @@ public final class DeviceClient extends InternalClient implements Closeable
     }
 
     @Override
-    void setOption_SetSASTokenExpiryTime(Object value) throws IllegalArgumentException
+    void setOption_SetSASTokenExpiryTime(final Object value) throws IllegalArgumentException
     {
         log.debug("Setting SASTokenExpiryTime as {} seconds", value);
 
@@ -698,7 +708,7 @@ public final class DeviceClient extends InternalClient implements Closeable
                             }
                         }
                     }
-                    catch (IOException e)
+                    catch (final IOException e)
                     {
                         // Codes_SRS_DEVICECLIENT_12_027: [The function shall throw IOError if either the deviceIO or the tranportClient's open() or closeNow() throws.]
                         throw new IOError(e);
@@ -708,7 +718,7 @@ public final class DeviceClient extends InternalClient implements Closeable
         }
     }
 
-    private static long getReceivePeriod(IotHubClientProtocol protocol)
+    private static long getReceivePeriod(final IotHubClientProtocol protocol)
     {
         switch (protocol)
         {
