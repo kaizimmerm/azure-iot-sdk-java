@@ -2,6 +2,8 @@ package com.microsoft.azure.sdk.iot.device;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import com.microsoft.azure.sdk.iot.device.transport.RetryPolicy;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,6 +71,11 @@ public class TransportClient
         this.transportClientState = TransportClientState.CLOSED;
     }
 
+    public void open() throws IllegalStateException, IOException
+    {
+      open(Executors.newScheduledThreadPool(1));
+    }
+
     /**
      * Creates a deviceIO and sets it to all the device client.
      * Verifies all device client's SAS tokens and renew them if it is necessary.
@@ -77,10 +84,10 @@ public class TransportClient
      * @throws IllegalStateException if the connection is already open.
      * @throws IOException if the connection to an IoT Hub cannot be opened.
      */
-    public void open() throws IllegalStateException, IOException
+    public void open(final ScheduledExecutorService taskScheduler) throws IllegalStateException, IOException
     {
         // Codes_SRS_TRANSPORTCLIENT_12_008: [The function shall throw  IllegalStateException if the connection is already open.]
-        if ((this.deviceIO != null) && (this.deviceIO.isOpen()))
+        if (isOpen())
         {
             throw new IllegalStateException("The transport client connection is already open.");
         }
@@ -89,7 +96,7 @@ public class TransportClient
         if (this.deviceClientList.size() > 0)
         {
             // Codes_SRS_TRANSPORTCLIENT_12_011: [The function shall create a new DeviceIO using the first registered device client's configuration.]
-            this.deviceIO = new DeviceIO(deviceClientList.get(0).getConfig(), SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_AMQPS);
+            this.deviceIO = new DeviceIO(deviceClientList.get(0).getConfig(), SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_AMQPS, taskScheduler);
             deviceClientList.get(0).setDeviceIO(this.deviceIO);
 
             // Codes_SRS_TRANSPORTCLIENT_12_012: [The function shall set the created DeviceIO to all registered device client.]
@@ -109,6 +116,13 @@ public class TransportClient
         this.transportClientState = TransportClientState.OPENED;
 
         log.info("Transport client opened successfully");
+    }
+
+    /**
+     * @return true if connection is open
+     */
+    public boolean isOpen() {
+      return (this.deviceIO != null) && (this.deviceIO.isOpen());
     }
 
     /**

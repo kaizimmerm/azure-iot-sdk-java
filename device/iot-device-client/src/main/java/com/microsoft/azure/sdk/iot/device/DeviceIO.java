@@ -85,10 +85,14 @@ public final class DeviceIO
     private IotHubReceiveTask receiveTask = null;
     private IotHubClientProtocol protocol = null;
 
-    private ScheduledExecutorService taskScheduler;
+    private final ScheduledExecutorService taskScheduler;
     private IotHubClientState state;
 
     private final List<DeviceClientConfig> deviceClientConfigs = new LinkedList<>();
+
+    DeviceIO(final DeviceClientConfig config, final long sendPeriodInMilliseconds, final long receivePeriodInMilliseconds) {
+      this(config, sendPeriodInMilliseconds, receivePeriodInMilliseconds, Executors.newScheduledThreadPool(2));
+    }
 
     /**
      * Constructor that takes a connection string as an argument.
@@ -100,13 +104,15 @@ public final class DeviceIO
      * @throws IllegalArgumentException if any of {@code config} or
      * {@code protocol} are {@code null}.
      */
-    DeviceIO(final DeviceClientConfig config, final long sendPeriodInMilliseconds, final long receivePeriodInMilliseconds)
+    DeviceIO(final DeviceClientConfig config, final long sendPeriodInMilliseconds, final long receivePeriodInMilliseconds, final ScheduledExecutorService taskScheduler)
     {
         /* Codes_SRS_DEVICE_IO_21_002: [If the `config` is null, the constructor shall throw an IllegalArgumentException.] */
         if(config == null)
         {
             throw new IllegalArgumentException("Config cannot be null.");
         }
+
+        this.taskScheduler = taskScheduler;
 
         /* Codes_SRS_DEVICE_IO_21_001: [The constructor shall store the provided protocol and config information.] */
         deviceClientConfigs.add(config);
@@ -126,7 +132,7 @@ public final class DeviceIO
             this.config.setUseWebsocket(true);
         }
 
-        this.transport = new IotHubTransport(config);
+        this.transport = new IotHubTransport(config, taskScheduler);
 
         /* Codes_SRS_DEVICE_IO_21_037: [The constructor shall initialize the `sendPeriodInMilliseconds` with default value of 10 milliseconds.] */
         this.sendPeriodInMilliseconds = sendPeriodInMilliseconds;
@@ -201,7 +207,6 @@ public final class DeviceIO
         this.sendTask = new IotHubSendTask(this.transport);
         this.receiveTask = new IotHubReceiveTask(this.transport);
 
-        this.taskScheduler = Executors.newScheduledThreadPool(2);
         // the scheduler waits until each execution is finished before
         // scheduling the next one, so executions of a given task
         // will never overlap.

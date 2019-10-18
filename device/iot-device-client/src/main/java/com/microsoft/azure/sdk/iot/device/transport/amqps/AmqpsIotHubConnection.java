@@ -701,11 +701,10 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
                     this.log.trace("Amqp delivery received that acknowledged a sent message with delivery tag {}", deliveryTag);
 
                     this.log.trace("Checking if amqp in progress messages contains delivery tag {}", deliveryTag);
-                    if (this.inProgressMessages.containsKey(deliveryTag))
+                    final com.microsoft.azure.sdk.iot.device.Message acknowledgedMessage = inProgressMessages.remove(deliveryTag);
+                    if (acknowledgedMessage != null)
                     {
                         this.log.trace("Amqp in progress messages does contain delivery tag {}", deliveryTag);
-
-                        final com.microsoft.azure.sdk.iot.device.Message acknowledgedMessage = inProgressMessages.remove(deliveryTag);
 
                         if (remoteState instanceof Accepted)
                         {
@@ -738,7 +737,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
                                 transportException = new TransportException("IotHub rejected the message");
                             }
 
-                            this.listener.onMessageSent(inProgressMessages.remove(deliveryTag), transportException);
+                            this.listener.onMessageSent(acknowledgedMessage, transportException);
 
                         }
                         else if (remoteState instanceof Modified || remoteState instanceof Released || remoteState instanceof Received)
@@ -748,7 +747,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
                             // Codes_SRS_AMQPSIOTHUBCONNECTION_34_066: [If the acknowledgement sent from the service is "Modified", "Released", or "Received", this function shall notify its listener that the sent message needs to be retried.]
                             final TransportException transportException = new TransportException("IotHub responded to message with Modified, Received or Released; message needs to be re-delivered");
                             transportException.setRetryable(true);
-                            this.listener.onMessageSent(inProgressMessages.remove(deliveryTag), transportException);
+                            this.listener.onMessageSent(acknowledgedMessage, transportException);
                         }
                     }
                     else

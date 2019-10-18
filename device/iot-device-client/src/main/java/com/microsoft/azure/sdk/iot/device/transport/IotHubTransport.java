@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -81,19 +80,16 @@ public class IotHubTransport implements IotHubListener
 
     private int currentReconnectionAttempt;
     private long reconnectionAttemptStartTimeMillis;
-    private ScheduledExecutorService taskScheduler;
+    private final ScheduledExecutorService taskScheduler;
 
-    final private Object reconnectionLock = new Object();
-
-    private ScheduledExecutorService scheduledExecutorService;
-    private static final int POOL_SIZE = 1;
+    private final Object reconnectionLock = new Object();
 
     /**
      * Constructor for an IotHubTransport object with default values
      * @param defaultConfig the config used for opening connections, retrieving retry policy, and checking protocol
      * @throws IllegalArgumentException if defaultConfig is null
      */
-    public IotHubTransport(final DeviceClientConfig defaultConfig) throws IllegalArgumentException
+    public IotHubTransport(final DeviceClientConfig defaultConfig, final ScheduledExecutorService taskScheduler) throws IllegalArgumentException
     {
         if (defaultConfig == null)
         {
@@ -101,6 +97,8 @@ public class IotHubTransport implements IotHubListener
             // IllegalArgumentException.]
             throw new IllegalArgumentException("Config cannot be null");
         }
+
+        this.taskScheduler = taskScheduler;
 
         //Codes_SRS_IOTHUBTRANSPORT_34_001: [The constructor shall save the default config.]
         this.defaultConfig = defaultConfig;
@@ -287,7 +285,6 @@ public class IotHubTransport implements IotHubListener
 
         this.deviceClientConfigs = new LinkedBlockingQueue<>(deviceClientConfigs);
         this.defaultConfig = this.deviceClientConfigs.peek();
-        this.taskScheduler = Executors.newScheduledThreadPool(1);
 
         //Codes_SRS_IOTHUBTRANSPORT_34_019: [This function shall open the invoke the method openConnection.]
         openConnection();
@@ -330,12 +327,6 @@ public class IotHubTransport implements IotHubListener
         if (this.taskScheduler != null)
         {
             this.taskScheduler.shutdown();
-        }
-
-        if (this.scheduledExecutorService != null)
-        {
-            this.scheduledExecutorService.shutdownNow();
-            this.scheduledExecutorService = null;
         }
 
         //Codes_SRS_IOTHUBTRANSPORT_34_024: [This function shall close the connection.]
@@ -699,9 +690,8 @@ public class IotHubTransport implements IotHubListener
      * Creates a new iotHubTransportConnection instance, sets this object as its listener, and opens that connection
      * @throws TransportException
      */
-    private void openConnection() throws TransportException
+    private void openConnection( ) throws TransportException
     {
-        scheduledExecutorService = Executors.newScheduledThreadPool(POOL_SIZE);
 
         if (this.iotHubTransportConnection == null)
         {
@@ -732,7 +722,7 @@ public class IotHubTransport implements IotHubListener
         this.iotHubTransportConnection.setListener(this);
 
         //Codes_SRS_IOTHUBTRANSPORT_34_039: [This function shall open the iotHubTransportConnection object with the saved list of configs.]
-        this.iotHubTransportConnection.open(this.deviceClientConfigs, scheduledExecutorService);
+        this.iotHubTransportConnection.open(this.deviceClientConfigs, taskScheduler);
 
         //Codes_SRS_IOTHUBTRANSPORT_34_040: [This function shall invoke the method updateStatus with status CONNECTED,
         // reason CONNECTION_OK, and a null throwable.]
