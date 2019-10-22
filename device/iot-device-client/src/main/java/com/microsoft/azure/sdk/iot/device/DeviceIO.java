@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
@@ -82,7 +83,9 @@ public final class DeviceIO
     private final IotHubTransport transport;
     private final DeviceClientConfig config;
     private IotHubSendTask sendTask = null;
+    private ScheduledFuture<?>  scheduledSendTask;
     private IotHubReceiveTask receiveTask = null;
+    private ScheduledFuture<?>  scheduledReceiveTask;
     private IotHubClientProtocol protocol = null;
 
     private final ScheduledExecutorService taskScheduler;
@@ -207,14 +210,24 @@ public final class DeviceIO
         this.sendTask = new IotHubSendTask(this.transport);
         this.receiveTask = new IotHubReceiveTask(this.transport);
 
+        if (scheduledSendTask != null) {
+          scheduledSendTask.cancel(true);
+          scheduledSendTask = null;
+        }
+
+        if (scheduledReceiveTask != null) {
+          scheduledReceiveTask.cancel(true);
+          scheduledSendTask = null;
+        }
+
         // the scheduler waits until each execution is finished before
         // scheduling the next one, so executions of a given task
         // will never overlap.
         /* Codes_SRS_DEVICE_IO_21_013: [The open shall schedule send tasks to run every SEND_PERIOD_MILLIS milliseconds.] */
-        this.taskScheduler.scheduleAtFixedRate(this.sendTask, 0,
+        scheduledSendTask = this.taskScheduler.scheduleAtFixedRate(this.sendTask, 0,
                 sendPeriodInMilliseconds, TimeUnit.MILLISECONDS);
         /* Codes_SRS_DEVICE_IO_21_014: [The open shall schedule receive tasks to run every receivePeriodInMilliseconds milliseconds.] */
-        this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
+        scheduledReceiveTask = this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
                 receivePeriodInMilliseconds, TimeUnit.MILLISECONDS);
 
         /* Codes_SRS_DEVICE_IO_21_016: [The open shall set the `state` as `CONNECTED`.] */
@@ -347,7 +360,12 @@ public final class DeviceIO
                 throw new IOException("transport receive task not set");
             }
 
-            this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
+            if (scheduledReceiveTask != null) {
+              scheduledReceiveTask.cancel(true);
+              scheduledSendTask = null;
+            }
+
+            scheduledReceiveTask = this.taskScheduler.scheduleAtFixedRate(this.receiveTask, 0,
                     this.receivePeriodInMilliseconds, TimeUnit.MILLISECONDS);
         }
     }
@@ -390,7 +408,12 @@ public final class DeviceIO
                 throw new IOException("transport send task not set");
             }
 
-            this.taskScheduler.scheduleAtFixedRate(this.sendTask, 0,
+            if (scheduledSendTask != null) {
+              scheduledSendTask.cancel(true);
+              scheduledSendTask = null;
+            }
+
+            scheduledSendTask = this.taskScheduler.scheduleAtFixedRate(this.sendTask, 0,
                     this.sendPeriodInMilliseconds, TimeUnit.MILLISECONDS);
         }
     }

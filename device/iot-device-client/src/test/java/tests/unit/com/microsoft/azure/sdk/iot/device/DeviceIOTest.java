@@ -3,28 +3,37 @@
 
 package tests.unit.com.microsoft.azure.sdk.iot.device;
 
-import com.microsoft.azure.sdk.iot.device.*;
-import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
-import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubReceiveTask;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubSendTask;
-import com.microsoft.azure.sdk.iot.device.transport.IotHubTransport;
-import mockit.*;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import org.junit.Test;
+import com.microsoft.azure.sdk.iot.device.DeviceClientConfig;
+import com.microsoft.azure.sdk.iot.device.DeviceIO;
+import com.microsoft.azure.sdk.iot.device.IotHubClientProtocol;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStateCallback;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStatusChangeCallback;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionStatusChangeReason;
+import com.microsoft.azure.sdk.iot.device.IotHubConnectionString;
+import com.microsoft.azure.sdk.iot.device.IotHubEventCallback;
+import com.microsoft.azure.sdk.iot.device.Message;
+import com.microsoft.azure.sdk.iot.device.exceptions.DeviceClientException;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubReceiveTask;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubSendTask;
+import com.microsoft.azure.sdk.iot.device.transport.IotHubTransport;
+import mockit.Deencapsulation;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.StrictExpectations;
+import mockit.Verifications;
 
 /**
  * Unit tests for DeviceIO.
@@ -45,7 +54,7 @@ public class DeviceIOTest
     @Mocked
     IotHubTransport mockedTransport;
 
-    @Mocked 
+    @Mocked
     DeviceClientConfig mockConfig;
 
     @Mocked
@@ -69,7 +78,7 @@ public class DeviceIOTest
         new NonStrictExpectations()
         {
             {
-                new IotHubTransport(mockConfig);
+                new IotHubTransport(mockConfig, mockScheduler);
                 result = mockedTransport;
             }
         };
@@ -124,7 +133,7 @@ public class DeviceIOTest
         };
 
         // act
-        Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
+        final Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
                 new Class[] {DeviceClientConfig.class, long.class, long.class},
                 mockConfig, SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_AMQPS);
 
@@ -143,7 +152,7 @@ public class DeviceIOTest
             }
         };
     }
-    
+
     /* Tests_SRS_DEVICE_IO_21_002: [If the `config` is null, the constructor shall throw an IllegalArgumentException.] */
     @Test (expected = IllegalArgumentException.class)
     public void constructorConnectionStringThrows()
@@ -173,7 +182,7 @@ public class DeviceIOTest
         };
 
         // act
-        Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
+        final Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
                 new Class[] {DeviceClientConfig.class, long.class, long.class},
                 mockConfig, SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_MQTT);
 
@@ -210,7 +219,7 @@ public class DeviceIOTest
         };
 
         // act
-        Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
+        final Object deviceIO = Deencapsulation.newInstance("com.microsoft.azure.sdk.iot.device.DeviceIO",
                 new Class[] {DeviceClientConfig.class, long.class, long.class},
                 mockConfig, SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_HTTPS);
 
@@ -426,7 +435,7 @@ public class DeviceIOTest
         {
             openDeviceIO(deviceIO, mockedTransport, mockExecutors, mockScheduler);
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
             // catch and ignore IOException from open
         }
@@ -614,7 +623,7 @@ public class DeviceIOTest
                 mockConfig, SEND_PERIOD_MILLIS, RECEIVE_PERIOD_MILLIS_AMQPS);
 
         // act
-        IotHubClientProtocol actualProtocol = Deencapsulation.invoke(deviceIO, "getProtocol") ;
+        final IotHubClientProtocol actualProtocol = Deencapsulation.invoke(deviceIO, "getProtocol") ;
 
         // assert
         assertEquals(expected, actualProtocol);
@@ -630,7 +639,7 @@ public class DeviceIOTest
         final Object deviceIO = newDeviceIO();
 
         // act
-        long receivePeriodInMilliseconds = Deencapsulation.invoke(deviceIO, "getReceivePeriodInMilliseconds") ;
+        final long receivePeriodInMilliseconds = Deencapsulation.invoke(deviceIO, "getReceivePeriodInMilliseconds") ;
 
         // assert
         assertEquals(RECEIVE_PERIOD_MILLIS_AMQPS, Deencapsulation.getField(deviceIO, "receivePeriodInMilliseconds"));
@@ -747,7 +756,7 @@ public class DeviceIOTest
         final Object deviceIO = newDeviceIO();
 
         // act
-        long sendPeriodInMilliseconds = Deencapsulation.invoke(deviceIO, "getSendPeriodInMilliseconds" );
+        final long sendPeriodInMilliseconds = Deencapsulation.invoke(deviceIO, "getSendPeriodInMilliseconds" );
 
         // assert
         assertEquals(SEND_PERIOD_MILLIS, Deencapsulation.getField(deviceIO, "sendPeriodInMilliseconds"));
@@ -863,7 +872,7 @@ public class DeviceIOTest
         openDeviceIO(deviceIO, mockedTransport, mockExecutors, mockScheduler);
 
         // act
-        boolean isOpen = Deencapsulation.invoke(deviceIO, "isOpen" );
+        final boolean isOpen = Deencapsulation.invoke(deviceIO, "isOpen" );
 
         // assert
         assertTrue(isOpen);
@@ -878,7 +887,7 @@ public class DeviceIOTest
         final Object deviceIO = newDeviceIO();
 
         // act
-        boolean isOpen = Deencapsulation.invoke(deviceIO, "isOpen" );
+        final boolean isOpen = Deencapsulation.invoke(deviceIO, "isOpen" );
 
         // assert
         assertFalse(isOpen);
@@ -903,7 +912,7 @@ public class DeviceIOTest
         };
 
         // act
-        boolean isOpen = Deencapsulation.invoke(deviceIO, "isEmpty" );
+        final boolean isOpen = Deencapsulation.invoke(deviceIO, "isEmpty" );
 
         // assert
         assertTrue(isOpen);
@@ -928,7 +937,7 @@ public class DeviceIOTest
         };
 
         // act
-        boolean isOpen = Deencapsulation.invoke(deviceIO, "isEmpty" );
+        final boolean isOpen = Deencapsulation.invoke(deviceIO, "isEmpty" );
 
         // assert
         assertFalse(isOpen);
